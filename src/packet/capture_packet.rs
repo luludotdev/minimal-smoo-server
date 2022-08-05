@@ -6,7 +6,7 @@ use super::traits::Packet;
 
 #[derive(Debug, PacketBytes)]
 pub struct CapturePacket {
-    model: FixedString<0x20>,
+    pub model: FixedString<0x20>,
 }
 
 impl From<CapturePacket> for PacketType {

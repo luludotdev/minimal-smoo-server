@@ -6,10 +6,10 @@ use super::traits::Packet;
 
 #[derive(Debug, PacketBytes)]
 pub struct ChangeStagePacket {
-    id: FixedString<0x10>,
-    stage: FixedString<0x30>,
-    scenario: i8,
-    sub_scenario: u8,
+    pub id: FixedString<0x10>,
+    pub stage: FixedString<0x30>,
+    pub scenario: i8,
+    pub sub_scenario: u8,
 }
 
 impl From<ChangeStagePacket> for PacketType {

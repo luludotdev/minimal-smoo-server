@@ -6,9 +6,9 @@ use super::traits::Packet;
 
 #[derive(Debug, PacketBytes)]
 pub struct GamePacket {
-    is_2d: bool,
-    scenario: u8,
-    stage: FixedString<0x20>,
+    pub is_2d: bool,
+    pub scenario: u8,
+    pub stage: FixedString<0x20>,
 }
 
 impl From<GamePacket> for PacketType {

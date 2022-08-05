@@ -5,8 +5,8 @@ use super::traits::Packet;
 
 #[derive(Debug, PacketBytes)]
 pub struct ShinePacket {
-    id: i32,
-    is_grand: bool,
+    pub id: i32,
+    pub is_grand: bool,
 }
 
 impl From<ShinePacket> for PacketType {

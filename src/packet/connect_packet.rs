@@ -8,9 +8,9 @@ use super::traits::{Packet, PacketBytes};
 
 #[derive(Debug, PacketBytes)]
 pub struct ConnectPacket {
-    connection_type: ConnectionType,
-    max_players: u16,
-    nickname: FixedString<0x20>,
+    pub connection_type: ConnectionType,
+    pub max_players: u16,
+    pub nickname: FixedString<0x20>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

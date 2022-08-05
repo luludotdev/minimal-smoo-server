@@ -5,7 +5,7 @@ use super::traits::Packet;
 
 #[derive(Debug, PacketBytes)]
 pub struct InitPacket {
-    max_players: u16,
+    pub max_players: u16,
 }
 
 impl From<InitPacket> for PacketType {

@@ -6,8 +6,8 @@ use super::traits::Packet;
 
 #[derive(Debug, PacketBytes)]
 pub struct CostumePacket {
-    body: FixedString<0x20>,
-    cap: FixedString<0x20>,
+    pub body: FixedString<0x20>,
+    pub cap: FixedString<0x20>,
 }
 
 impl From<CostumePacket> for PacketType {
