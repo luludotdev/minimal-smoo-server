@@ -15,12 +15,12 @@ use super::PacketBytes;
 
 // region: PacketHeader
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct PacketHeader {
+pub struct Packet {
     pub id: Uuid,
-    pub packet: PacketType,
+    pub data: PacketData,
 }
 
-impl PacketHeader {
+impl Packet {
     pub fn to_bytes(self) -> Bytes {
         let mut buf = BytesMut::with_capacity(128);
         self.write_bytes(&mut buf);
@@ -38,108 +38,108 @@ impl PacketHeader {
         std::mem::size_of::<Uuid>() + std::mem::size_of::<u16>() + std::mem::size_of::<u16>()
     }
 
-    fn read_body<T: Buf>(id: Uuid, packet_id: u16, buf: &mut T) -> Result<PacketHeader> {
+    fn read_body<T: Buf>(id: Uuid, packet_id: u16, buf: &mut T) -> Result<Packet> {
         match packet_id {
             1 => {
                 let packet = InitPacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
             2 => {
                 let packet = PlayerPacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
             3 => {
                 let packet = CapPacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
             4 => {
                 let packet = GamePacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
-            5 => Ok(PacketHeader {
+            5 => Ok(Packet {
                 id,
-                packet: PacketType::Tag,
+                data: PacketData::Tag,
             }),
 
             6 => {
                 let packet = ConnectPacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
-            7 => Ok(PacketHeader {
+            7 => Ok(Packet {
                 id,
-                packet: PacketType::Disconnect,
+                data: PacketData::Disconnect,
             }),
 
             8 => {
                 let packet = CostumePacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
             9 => {
                 let packet = ShinePacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
             10 => {
                 let packet = CapturePacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
             11 => {
                 let packet = ChangeStagePacket::from_bytes(buf)?;
-                Ok(PacketHeader {
+                Ok(Packet {
                     id,
-                    packet: packet.into(),
+                    data: packet.into(),
                 })
             }
 
-            _ => Ok(PacketHeader {
+            _ => Ok(Packet {
                 id,
-                packet: PacketType::Unknown,
+                data: PacketData::Unknown,
             }),
         }
     }
 }
 
-impl PacketBytes for PacketHeader {
+impl PacketBytes for Packet {
     fn write_bytes(&self, buf: &mut BytesMut) -> usize {
         let mut written = 0;
-        let packet_id = self.packet.id();
+        let packet_id = self.data.id();
 
         written += self.id.write_bytes(buf);
         written += packet_id.write_bytes(buf);
 
         let mut packet_buf = BytesMut::with_capacity(128);
-        let packet_byte_count = self.packet.write_bytes(&mut packet_buf);
+        let packet_byte_count = self.data.write_bytes(&mut packet_buf);
 
         let packet_byte_short = packet_byte_count as u16;
         written += packet_byte_short.write_bytes(buf);
@@ -160,14 +160,14 @@ impl PacketBytes for PacketHeader {
     }
 }
 
-impl From<PacketHeader> for Bytes {
+impl From<Packet> for Bytes {
     #[inline]
-    fn from(header: PacketHeader) -> Self {
+    fn from(header: Packet) -> Self {
         header.to_bytes()
     }
 }
 
-impl TryFrom<Bytes> for PacketHeader {
+impl TryFrom<Bytes> for Packet {
     type Error = Report;
 
     #[inline]
@@ -177,9 +177,9 @@ impl TryFrom<Bytes> for PacketHeader {
 }
 // endregion
 
-// region: PacketType
+// region: PacketData
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum PacketType {
+pub enum PacketData {
     Unknown,
     Init(InitPacket),
     Player(PlayerPacket),
@@ -194,41 +194,41 @@ pub enum PacketType {
     ChangeStage(ChangeStagePacket),
 }
 
-impl PacketType {
+impl PacketData {
     #[inline]
     pub fn id(&self) -> u16 {
         match self {
-            PacketType::Unknown => 0,
-            PacketType::Init(_) => 1,
-            PacketType::Player(_) => 2,
-            PacketType::Cap(_) => 3,
-            PacketType::Game(_) => 4,
-            PacketType::Tag => 5,
-            PacketType::Connect(_) => 6,
-            PacketType::Disconnect => 7,
-            PacketType::Costume(_) => 8,
-            PacketType::Shine(_) => 9,
-            PacketType::Capture(_) => 10,
-            PacketType::ChangeStage(_) => 11,
+            PacketData::Unknown => 0,
+            PacketData::Init(_) => 1,
+            PacketData::Player(_) => 2,
+            PacketData::Cap(_) => 3,
+            PacketData::Game(_) => 4,
+            PacketData::Tag => 5,
+            PacketData::Connect(_) => 6,
+            PacketData::Disconnect => 7,
+            PacketData::Costume(_) => 8,
+            PacketData::Shine(_) => 9,
+            PacketData::Capture(_) => 10,
+            PacketData::ChangeStage(_) => 11,
         }
     }
 }
 
-impl PacketBytes for PacketType {
+impl PacketBytes for PacketData {
     fn write_bytes(&self, buf: &mut BytesMut) -> usize {
         match self {
             // Do nothing
-            PacketType::Unknown | PacketType::Tag | PacketType::Disconnect => 0,
+            PacketData::Unknown | PacketData::Tag | PacketData::Disconnect => 0,
 
-            PacketType::Init(packet) => packet.write_bytes(buf),
-            PacketType::Player(packet) => packet.write_bytes(buf),
-            PacketType::Cap(packet) => packet.write_bytes(buf),
-            PacketType::Game(packet) => packet.write_bytes(buf),
-            PacketType::Connect(packet) => packet.write_bytes(buf),
-            PacketType::Costume(packet) => packet.write_bytes(buf),
-            PacketType::Shine(packet) => packet.write_bytes(buf),
-            PacketType::Capture(packet) => packet.write_bytes(buf),
-            PacketType::ChangeStage(packet) => packet.write_bytes(buf),
+            PacketData::Init(packet) => packet.write_bytes(buf),
+            PacketData::Player(packet) => packet.write_bytes(buf),
+            PacketData::Cap(packet) => packet.write_bytes(buf),
+            PacketData::Game(packet) => packet.write_bytes(buf),
+            PacketData::Connect(packet) => packet.write_bytes(buf),
+            PacketData::Costume(packet) => packet.write_bytes(buf),
+            PacketData::Shine(packet) => packet.write_bytes(buf),
+            PacketData::Capture(packet) => packet.write_bytes(buf),
+            PacketData::ChangeStage(packet) => packet.write_bytes(buf),
         }
     }
 
@@ -248,8 +248,8 @@ pub struct PartialPacket {
 
 impl PartialPacket {
     #[inline]
-    pub fn upgrade<T: Buf>(self, buf: &mut T) -> Result<PacketHeader> {
-        PacketHeader::read_body(self.id, self.packet_id, buf)
+    pub fn upgrade<T: Buf>(self, buf: &mut T) -> Result<Packet> {
+        Packet::read_body(self.id, self.packet_id, buf)
     }
 }
 

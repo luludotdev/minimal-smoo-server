@@ -2,7 +2,7 @@ use bytes::{Buf, BytesMut};
 use color_eyre::Result;
 use uuid::Uuid;
 
-use super::header::{PacketHeader, PacketType};
+use super::header::{Packet, PacketData};
 
 pub trait PacketBytes
 where
@@ -12,12 +12,12 @@ where
     fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self>;
 }
 
-pub trait Packet: PacketBytes + Into<PacketType> {
+pub trait IntoPacket: PacketBytes + Into<PacketData> {
     #[inline]
-    fn into_header(self, id: Uuid) -> PacketHeader {
-        PacketHeader {
+    fn into_packet(self, id: Uuid) -> Packet {
+        Packet {
             id,
-            packet: self.into(),
+            data: self.into(),
         }
     }
 }

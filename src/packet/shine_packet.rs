@@ -1,7 +1,7 @@
 use smoo_derive::PacketBytes;
 
-use super::header::PacketType;
-use super::traits::Packet;
+use super::header::PacketData;
+use super::traits::IntoPacket;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct ShinePacket {
@@ -9,11 +9,11 @@ pub struct ShinePacket {
     pub is_grand: bool,
 }
 
-impl From<ShinePacket> for PacketType {
+impl From<ShinePacket> for PacketData {
     #[inline(always)]
     fn from(packet: ShinePacket) -> Self {
         Self::Shine(packet)
     }
 }
 
-impl Packet for ShinePacket {}
+impl IntoPacket for ShinePacket {}

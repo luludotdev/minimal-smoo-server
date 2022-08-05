@@ -4,8 +4,8 @@ use color_eyre::Result;
 use smoo_derive::PacketBytes;
 
 use super::fixed_string::FixedString;
-use super::header::PacketType;
-use super::traits::{Packet, PacketBytes};
+use super::header::PacketData;
+use super::traits::{IntoPacket, PacketBytes};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct ConnectPacket {
@@ -40,11 +40,11 @@ impl PacketBytes for ConnectionType {
     }
 }
 
-impl From<ConnectPacket> for PacketType {
+impl From<ConnectPacket> for PacketData {
     #[inline(always)]
     fn from(packet: ConnectPacket) -> Self {
         Self::Connect(packet)
     }
 }
 
-impl Packet for ConnectPacket {}
+impl IntoPacket for ConnectPacket {}

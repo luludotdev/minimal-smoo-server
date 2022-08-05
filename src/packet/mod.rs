@@ -37,10 +37,10 @@ mod tests {
     macro_rules! test_packet {
         ($data:ident) => {{
             let id = Uuid::new_v4();
-            let packet1 = $data.into_header(id);
+            let packet1 = $data.into_packet(id);
 
             let buf = packet1.to_bytes();
-            let packet2 = PacketHeader::from_bytes(buf).unwrap();
+            let packet2 = Packet::from_bytes(buf).unwrap();
 
             assert_eq!(packet1, packet2)
         }};

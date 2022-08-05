@@ -2,17 +2,17 @@ use bytes::{Buf, BytesMut};
 use color_eyre::Report;
 use tokio_util::codec::{Decoder, Encoder};
 
-use super::header::{PacketHeader, PartialPacket};
+use super::header::{Packet, PartialPacket};
 use super::traits::PacketBytes;
 
 pub struct PacketCodec;
 
 impl Decoder for PacketCodec {
-    type Item = PacketHeader;
+    type Item = Packet;
     type Error = Report;
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        if buf.remaining() < PacketHeader::buf_size() {
+        if buf.remaining() < Packet::buf_size() {
             return Ok(None);
         }
 
@@ -25,17 +25,17 @@ impl Decoder for PacketCodec {
         }
 
         let packet = partial.upgrade(buf)?;
-        buf.reserve(PacketHeader::buf_size());
+        buf.reserve(Packet::buf_size());
 
         Ok(Some(packet))
     }
 }
 
-impl Encoder<PacketHeader> for PacketCodec {
+impl Encoder<Packet> for PacketCodec {
     type Error = Report;
 
     #[inline]
-    fn encode(&mut self, item: PacketHeader, buf: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: Packet, buf: &mut BytesMut) -> Result<(), Self::Error> {
         item.write_bytes(buf);
 
         Ok(())

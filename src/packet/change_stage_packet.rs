@@ -1,8 +1,8 @@
 use smoo_derive::PacketBytes;
 
 use super::fixed_string::FixedString;
-use super::header::PacketType;
-use super::traits::Packet;
+use super::header::PacketData;
+use super::traits::IntoPacket;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct ChangeStagePacket {
@@ -12,11 +12,11 @@ pub struct ChangeStagePacket {
     pub sub_scenario: u8,
 }
 
-impl From<ChangeStagePacket> for PacketType {
+impl From<ChangeStagePacket> for PacketData {
     #[inline(always)]
     fn from(packet: ChangeStagePacket) -> Self {
         Self::ChangeStage(packet)
     }
 }
 
-impl Packet for ChangeStagePacket {}
+impl IntoPacket for ChangeStagePacket {}

@@ -1,8 +1,8 @@
 use smoo_derive::PacketBytes;
 
 use super::fixed_string::FixedString;
-use super::header::PacketType;
-use super::traits::Packet;
+use super::header::PacketData;
+use super::traits::IntoPacket;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct CostumePacket {
@@ -10,11 +10,11 @@ pub struct CostumePacket {
     pub cap: FixedString<0x20>,
 }
 
-impl From<CostumePacket> for PacketType {
+impl From<CostumePacket> for PacketData {
     #[inline(always)]
     fn from(packet: CostumePacket) -> Self {
         Self::Costume(packet)
     }
 }
 
-impl Packet for CostumePacket {}
+impl IntoPacket for CostumePacket {}

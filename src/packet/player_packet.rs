@@ -1,8 +1,8 @@
 use glam::{Quat, Vec3};
 use smoo_derive::PacketBytes;
 
-use super::header::PacketType;
-use super::traits::Packet;
+use super::header::PacketData;
+use super::traits::IntoPacket;
 
 #[derive(Debug, Clone, Copy, PartialEq, PacketBytes)]
 pub struct PlayerPacket {
@@ -13,11 +13,11 @@ pub struct PlayerPacket {
     pub subact: u16,
 }
 
-impl From<PlayerPacket> for PacketType {
+impl From<PlayerPacket> for PacketData {
     #[inline(always)]
     fn from(packet: PlayerPacket) -> Self {
         Self::Player(packet)
     }
 }
 
-impl Packet for PlayerPacket {}
+impl IntoPacket for PlayerPacket {}

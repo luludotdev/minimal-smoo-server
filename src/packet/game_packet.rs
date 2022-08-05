@@ -1,8 +1,8 @@
 use smoo_derive::PacketBytes;
 
 use super::fixed_string::FixedString;
-use super::header::PacketType;
-use super::traits::Packet;
+use super::header::PacketData;
+use super::traits::IntoPacket;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct GamePacket {
@@ -11,11 +11,11 @@ pub struct GamePacket {
     pub stage: FixedString<0x20>,
 }
 
-impl From<GamePacket> for PacketType {
+impl From<GamePacket> for PacketData {
     #[inline(always)]
     fn from(packet: GamePacket) -> Self {
         Self::Game(packet)
     }
 }
 
-impl Packet for GamePacket {}
+impl IntoPacket for GamePacket {}
