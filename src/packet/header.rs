@@ -1,4 +1,4 @@
-use bytes::{Bytes, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 use color_eyre::Result;
 use uuid::Uuid;
 
@@ -19,13 +19,44 @@ pub struct PacketHeader {
     pub packet: PacketType,
 }
 
+impl PacketHeader {
+    pub fn bytes(&self) -> Bytes {
+        let mut buf = BytesMut::with_capacity(128);
+        self.write_bytes(&mut buf);
+
+        buf.freeze()
+    }
+}
+
 impl PacketBytes for PacketHeader {
     fn write_bytes(&self, buf: &mut BytesMut) -> usize {
-        todo!()
+        let mut written = 0;
+        let packet_id = self.packet.id();
+
+        written += self.id.write_bytes(buf);
+        written += packet_id.write_bytes(buf);
+
+        let mut packet_buf = BytesMut::with_capacity(128);
+        let packet_byte_count = self.packet.write_bytes(&mut packet_buf);
+
+        let packet_byte_short = packet_byte_count as u16;
+        written += packet_byte_short.write_bytes(buf);
+
+        buf.put(packet_buf);
+        written += packet_byte_count;
+
+        written
     }
 
     fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         todo!()
+    }
+}
+
+impl From<PacketHeader> for Bytes {
+    #[inline]
+    fn from(header: PacketHeader) -> Self {
+        header.bytes()
     }
 }
 
@@ -45,9 +76,42 @@ pub enum PacketType {
     ChangeStage(ChangeStagePacket),
 }
 
+impl PacketType {
+    #[inline]
+    pub fn id(&self) -> u8 {
+        match self {
+            PacketType::Unknown => 0,
+            PacketType::Init(_) => 1,
+            PacketType::Player(_) => 2,
+            PacketType::Cap(_) => 3,
+            PacketType::Game(_) => 4,
+            PacketType::Tag => 5,
+            PacketType::Connect(_) => 6,
+            PacketType::Disconnect => 7,
+            PacketType::Costume(_) => 8,
+            PacketType::Shine(_) => 9,
+            PacketType::Capture(_) => 10,
+            PacketType::ChangeStage(_) => 11,
+        }
+    }
+}
+
 impl PacketBytes for PacketType {
     fn write_bytes(&self, buf: &mut BytesMut) -> usize {
-        todo!()
+        match self {
+            // Do nothing
+            PacketType::Unknown | PacketType::Tag | PacketType::Disconnect => 0,
+
+            PacketType::Init(packet) => packet.write_bytes(buf),
+            PacketType::Player(packet) => packet.write_bytes(buf),
+            PacketType::Cap(packet) => packet.write_bytes(buf),
+            PacketType::Game(packet) => packet.write_bytes(buf),
+            PacketType::Connect(packet) => packet.write_bytes(buf),
+            PacketType::Costume(packet) => packet.write_bytes(buf),
+            PacketType::Shine(packet) => packet.write_bytes(buf),
+            PacketType::Capture(packet) => packet.write_bytes(buf),
+            PacketType::ChangeStage(packet) => packet.write_bytes(buf),
+        }
     }
 
     fn from_bytes(_: &mut Bytes) -> Result<Self> {
