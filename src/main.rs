@@ -1,3 +1,10 @@
+use config::Config;
+
+mod config;
+
 fn main() {
-    println!("Hello, world!");
+    let cfg = Config::default();
+    let x = toml::to_string_pretty(&cfg).unwrap();
+
+    println!("{x}");
 }
