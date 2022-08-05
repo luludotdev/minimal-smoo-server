@@ -2,12 +2,16 @@ use std::collections::HashSet;
 use std::net::IpAddr;
 use std::num::NonZeroU8;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use color_eyre::eyre::Context;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
+use tokio::sync::RwLock;
 use uuid::Uuid;
+
+pub type SharedConfig = Arc<RwLock<Config>>;
 
 // region: Config
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -58,6 +62,11 @@ impl Config {
             .context("failed to write config")?;
 
         Ok(())
+    }
+
+    #[inline]
+    pub fn shared(self) -> SharedConfig {
+        Arc::new(RwLock::new(self))
     }
 }
 // endregion

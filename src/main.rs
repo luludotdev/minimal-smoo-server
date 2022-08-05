@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use clap::Parser;
 use color_eyre::Result;
 use once_cell::sync::Lazy;
@@ -5,7 +7,11 @@ use tracing_error::ErrorLayer;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, EnvFilter};
 
+use crate::config::Config;
+use crate::server::Server;
+
 mod config;
+mod server;
 
 static VERSION: Lazy<String> = Lazy::new(|| {
     let mut version = format!("v{}", env!("CARGO_PKG_VERSION"));
@@ -19,10 +25,18 @@ static VERSION: Lazy<String> = Lazy::new(|| {
 
 #[derive(Debug, Parser)]
 #[clap(version = &VERSION[..], about)]
-struct Args {
+pub struct Args {
     /// Verbosity level
     #[clap(short, long, parse(from_occurrences))]
     verbose: u8,
+
+    /// Server bind host [default: 127.0.0.1]
+    #[clap(short, long)]
+    host: Option<IpAddr>,
+
+    /// Server bind host [default: 1027]
+    #[clap(short, long)]
+    port: Option<u16>,
 }
 
 #[tokio::main]
@@ -52,6 +66,11 @@ async fn main() -> Result<()> {
         .with(fmt)
         .with(ErrorLayer::default())
         .init();
+
+    let config = Config::load().await?.shared();
+
+    let server = Server::new(&args, config.clone()).await;
+    server.listen();
 
     Ok(())
 }
