@@ -5,9 +5,11 @@ use uuid::Uuid;
 use super::traits::PacketBytes;
 
 impl PacketBytes for bool {
-    fn write_bytes(&self, bytes: &mut BytesMut) {
+    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
         let uint = if *self { 1 } else { 0 };
         bytes.put_u8(uint);
+
+        1
     }
 
     fn from_bytes(bytes: &mut Bytes) -> Self {
@@ -17,9 +19,11 @@ impl PacketBytes for bool {
 }
 
 impl PacketBytes for Uuid {
-    fn write_bytes(&self, bytes: &mut BytesMut) {
+    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
         let uuid = self.into_bytes();
         bytes.put(&uuid[..]);
+
+        16
     }
 
     fn from_bytes(bytes: &mut Bytes) -> Self {
@@ -31,10 +35,12 @@ impl PacketBytes for Uuid {
 }
 
 impl PacketBytes for Vec3 {
-    fn write_bytes(&self, bytes: &mut BytesMut) {
+    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
         bytes.put_f32_le(self.x);
         bytes.put_f32_le(self.y);
         bytes.put_f32_le(self.z);
+
+        12
     }
 
     fn from_bytes(bytes: &mut Bytes) -> Self {
@@ -47,11 +53,13 @@ impl PacketBytes for Vec3 {
 }
 
 impl PacketBytes for Quat {
-    fn write_bytes(&self, bytes: &mut BytesMut) {
+    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
         bytes.put_f32_le(self.x);
         bytes.put_f32_le(self.y);
         bytes.put_f32_le(self.z);
         bytes.put_f32_le(self.w);
+
+        16
     }
 
     fn from_bytes(bytes: &mut Bytes) -> Self {
