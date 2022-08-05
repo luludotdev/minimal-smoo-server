@@ -36,6 +36,32 @@ impl<const N: usize> PacketBytes for [u8; N] {
         dst
     }
 }
+
+impl<const N: usize> PacketBytes for [f32; N] {
+    #[inline]
+    fn write_bytes(&self, buf: &mut BytesMut) -> usize {
+        for f in self {
+            buf.put_f32_le(*f);
+        }
+
+        std::mem::size_of::<Self>()
+    }
+
+    #[inline]
+    fn from_bytes(buf: &mut Bytes) -> Self {
+        let fsize = std::mem::size_of::<f32>();
+        let bytes = std::mem::size_of::<Self>();
+
+        let vec = buf
+            .copy_to_bytes(bytes)
+            .chunks(fsize)
+            .map(|mut chunk| chunk.get_f32_le())
+            .collect::<Vec<_>>();
+
+        // TODO: Fallible
+        vec.try_into().unwrap()
+    }
+}
 // endregion
 
 // region: Numeric Types
