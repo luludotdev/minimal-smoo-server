@@ -3,16 +3,59 @@ use std::net::IpAddr;
 use std::num::NonZeroU8;
 use std::path::{Path, PathBuf};
 
+use color_eyre::eyre::Context;
+use color_eyre::Result;
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Default, Deserialize, Serialize, Getters)]
+// region: Config
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Config {
-    server: ServerConfig,
-    moons: MoonConfig,
-    costumes: CostumesConfig,
+    pub server: ServerConfig,
+    pub moons: MoonConfig,
+    pub costumes: CostumesConfig,
 }
+
+impl Config {
+    #[inline(always)]
+    fn path_buf() -> PathBuf {
+        PathBuf::from("./config.toml")
+    }
+
+    pub async fn load() -> Result<Self> {
+        let path = Self::path_buf();
+        if !path.exists() {
+            let config = Self::load_default().await?;
+            return Ok(config);
+        }
+
+        let bytes = tokio::fs::read(&path)
+            .await
+            .context("failed to read config")?;
+
+        let result = toml::from_slice::<Config>(&bytes);
+        match result {
+            Ok(config) => Ok(config),
+            Err(_) => {
+                let config = Self::load_default().await?;
+                Ok(config)
+            }
+        }
+    }
+
+    async fn load_default() -> Result<Self> {
+        let config = Self::default();
+        config.save().await?;
+
+        Ok(config)
+    }
+
+    pub async fn save(&self) -> Result<()> {
+        todo!()
+    }
+}
+// endregion
 
 // region: ServerConfig
 #[derive(Debug, Deserialize, Serialize, Getters)]

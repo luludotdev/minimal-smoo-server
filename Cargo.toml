@@ -7,7 +7,9 @@ edition = "2021"
 rust-version = "1.62"
 
 [dependencies]
+color-eyre = "0.6.2"
 derive-getters = "0.2.0"
 serde = { version = "1.0.142", features = ["derive"] }
+tokio = { version = "1.20.1", features = ["full"] }
 toml = "0.5.9"
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
