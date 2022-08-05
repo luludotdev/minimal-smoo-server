@@ -31,6 +31,11 @@ impl PacketHeader {
     pub fn from_bytes(mut buf: Bytes) -> Result<Self> {
         <Self as PacketBytes>::from_bytes(&mut buf)
     }
+
+    #[inline]
+    pub const fn buf_size() -> usize {
+        std::mem::size_of::<Uuid>() + std::mem::size_of::<u16>() + std::mem::size_of::<u16>()
+    }
 }
 
 impl PacketBytes for PacketHeader {
@@ -55,7 +60,7 @@ impl PacketBytes for PacketHeader {
 
     fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         let id = <Uuid as PacketBytes>::from_bytes(buf)?;
-        let packet_id = u8::from_bytes(buf)?;
+        let packet_id = u16::from_bytes(buf)?;
 
         // Packet length
         let _ = u16::from_bytes(buf)?;
@@ -185,7 +190,7 @@ pub enum PacketType {
 
 impl PacketType {
     #[inline]
-    pub fn id(&self) -> u8 {
+    pub fn id(&self) -> u16 {
         match self {
             PacketType::Unknown => 0,
             PacketType::Init(_) => 1,
