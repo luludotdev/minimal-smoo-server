@@ -11,11 +11,11 @@ pub struct PacketHeader {
 }
 
 impl PacketBytes for PacketHeader {
-    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
+    fn write_bytes(&self, buf: &mut BytesMut) -> usize {
         todo!()
     }
 
-    fn from_bytes(bytes: &mut Bytes) -> Self {
+    fn from_bytes(buf: &mut Bytes) -> Self {
         todo!()
     }
 }
@@ -37,7 +37,7 @@ pub enum PacketType {
 }
 
 impl PacketBytes for PacketType {
-    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
+    fn write_bytes(&self, buf: &mut BytesMut) -> usize {
         todo!()
     }
 

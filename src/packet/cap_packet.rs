@@ -13,26 +13,26 @@ pub struct CapPacket {
 }
 
 impl PacketBytes for CapPacket {
-    fn write_bytes(&self, bytes: &mut BytesMut) -> usize {
+    fn write_bytes(&self, buf: &mut BytesMut) -> usize {
         let mut written = 0;
 
-        written += self.position.write_bytes(bytes);
-        written += self.quaternion.write_bytes(bytes);
-        written += self.cap_out.write_bytes(bytes);
+        written += self.position.write_bytes(buf);
+        written += self.quaternion.write_bytes(buf);
+        written += self.cap_out.write_bytes(buf);
 
-        bytes.put(&self.cap_anim[..]);
+        buf.put(&self.cap_anim[..]);
         written += self.cap_anim.len();
 
         written
     }
 
-    fn from_bytes(bytes: &mut Bytes) -> Self {
-        let position = Vec3::from_bytes(bytes);
-        let quaternion = Quat::from_bytes(bytes);
-        let cap_out = bool::from_bytes(bytes);
+    fn from_bytes(buf: &mut Bytes) -> Self {
+        let position = Vec3::from_bytes(buf);
+        let quaternion = Quat::from_bytes(buf);
+        let cap_out = bool::from_bytes(buf);
 
         let mut cap_anim = [0u8; 30];
-        bytes.copy_to_slice(&mut cap_anim);
+        buf.copy_to_slice(&mut cap_anim);
 
         Self {
             position,
