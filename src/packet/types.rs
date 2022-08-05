@@ -16,7 +16,7 @@ impl PacketBytes for bool {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let uint = buf.get_u8();
         Ok(uint == 1)
     }
@@ -30,7 +30,7 @@ impl<const N: usize> PacketBytes for [u8; N] {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let mut dst = [0u8; N];
         buf.copy_to_slice(&mut dst);
 
@@ -49,7 +49,7 @@ impl<const N: usize> PacketBytes for [f32; N] {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: bytes::Buf>(buf: &mut T) -> Result<Self> {
         let fsize = std::mem::size_of::<f32>();
         let bytes = std::mem::size_of::<Self>();
 
@@ -81,7 +81,7 @@ macro_rules! packet_bytes_num {
                 }
 
                 #[inline]
-                fn from_bytes(buf: &mut bytes::Bytes) -> color_eyre::Result<Self> {
+                fn from_bytes<T: bytes::Buf>(buf: &mut T)-> color_eyre::Result<Self> {
                     Ok(buf.[<get_ $type>]())
                 }
             }
@@ -101,7 +101,7 @@ macro_rules! packet_bytes_num_le {
                 }
 
                 #[inline]
-                fn from_bytes(buf: &mut bytes::Bytes) -> color_eyre::Result<Self> {
+                fn from_bytes<T: bytes::Buf>(buf: &mut T) -> color_eyre::Result<Self> {
                     Ok(buf.[<get_ $type _le>]())
                 }
             }
@@ -128,7 +128,7 @@ impl PacketBytes for Uuid {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let mut dst = [0u8; 16];
         buf.copy_to_slice(&mut dst);
 
@@ -148,7 +148,7 @@ impl PacketBytes for Vec3 {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let vec3 = Self {
             x: buf.get_f32_le(),
             y: buf.get_f32_le(),
@@ -171,7 +171,7 @@ impl PacketBytes for Quat {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let quat = Quat::from_xyzw(
             buf.get_f32_le(),
             buf.get_f32_le(),

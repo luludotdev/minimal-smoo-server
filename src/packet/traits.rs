@@ -1,4 +1,4 @@
-use bytes::{Bytes, BytesMut};
+use bytes::{Buf, BytesMut};
 use color_eyre::Result;
 use uuid::Uuid;
 
@@ -9,7 +9,7 @@ where
     Self: Sized,
 {
     fn write_bytes(&self, buf: &mut BytesMut) -> usize;
-    fn from_bytes(buf: &mut Bytes) -> Result<Self>;
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self>;
 }
 
 pub trait Packet: PacketBytes + Into<PacketType> {

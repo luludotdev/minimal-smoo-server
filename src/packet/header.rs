@@ -1,4 +1,4 @@
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use color_eyre::{Report, Result};
 use uuid::Uuid;
 
@@ -13,6 +13,7 @@ use super::player_packet::PlayerPacket;
 use super::shine_packet::ShinePacket;
 use super::PacketBytes;
 
+// region: PacketHeader
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PacketHeader {
     pub id: Uuid,
@@ -36,35 +37,8 @@ impl PacketHeader {
     pub const fn buf_size() -> usize {
         std::mem::size_of::<Uuid>() + std::mem::size_of::<u16>() + std::mem::size_of::<u16>()
     }
-}
 
-impl PacketBytes for PacketHeader {
-    fn write_bytes(&self, buf: &mut BytesMut) -> usize {
-        let mut written = 0;
-        let packet_id = self.packet.id();
-
-        written += self.id.write_bytes(buf);
-        written += packet_id.write_bytes(buf);
-
-        let mut packet_buf = BytesMut::with_capacity(128);
-        let packet_byte_count = self.packet.write_bytes(&mut packet_buf);
-
-        let packet_byte_short = packet_byte_count as u16;
-        written += packet_byte_short.write_bytes(buf);
-
-        buf.put(packet_buf);
-        written += packet_byte_count;
-
-        written
-    }
-
-    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
-        let id = <Uuid as PacketBytes>::from_bytes(buf)?;
-        let packet_id = u16::from_bytes(buf)?;
-
-        // Packet length
-        let _ = u16::from_bytes(buf)?;
-
+    fn read_body<T: Buf>(id: Uuid, packet_id: u16, buf: &mut T) -> Result<PacketHeader> {
         match packet_id {
             1 => {
                 let packet = InitPacket::from_bytes(buf)?;
@@ -156,6 +130,36 @@ impl PacketBytes for PacketHeader {
     }
 }
 
+impl PacketBytes for PacketHeader {
+    fn write_bytes(&self, buf: &mut BytesMut) -> usize {
+        let mut written = 0;
+        let packet_id = self.packet.id();
+
+        written += self.id.write_bytes(buf);
+        written += packet_id.write_bytes(buf);
+
+        let mut packet_buf = BytesMut::with_capacity(128);
+        let packet_byte_count = self.packet.write_bytes(&mut packet_buf);
+
+        let packet_byte_short = packet_byte_count as u16;
+        written += packet_byte_short.write_bytes(buf);
+
+        buf.put(packet_buf);
+        written += packet_byte_count;
+
+        written
+    }
+
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
+        let id = <Uuid as PacketBytes>::from_bytes(buf)?;
+        let packet_id = u16::from_bytes(buf)?;
+
+        // Packet length
+        let _ = u16::from_bytes(buf)?;
+        Self::read_body(id, packet_id, buf)
+    }
+}
+
 impl From<PacketHeader> for Bytes {
     #[inline]
     fn from(header: PacketHeader) -> Self {
@@ -171,7 +175,9 @@ impl TryFrom<Bytes> for PacketHeader {
         Self::from_bytes(buf)
     }
 }
+// endregion
 
+// region: PacketType
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PacketType {
     Unknown,
@@ -226,7 +232,44 @@ impl PacketBytes for PacketType {
         }
     }
 
-    fn from_bytes(_: &mut Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(_: &mut T) -> Result<Self> {
         unimplemented!()
     }
 }
+// endregion
+
+// region: PartialPacket
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PartialPacket {
+    pub id: Uuid,
+    pub packet_id: u16,
+    pub body_length: u16,
+}
+
+impl PartialPacket {
+    #[inline]
+    pub fn upgrade<T: Buf>(self, buf: &mut T) -> Result<PacketHeader> {
+        PacketHeader::read_body(self.id, self.packet_id, buf)
+    }
+}
+
+impl PacketBytes for PartialPacket {
+    fn write_bytes(&self, _: &mut BytesMut) -> usize {
+        unimplemented!()
+    }
+
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
+        let id = <Uuid as PacketBytes>::from_bytes(buf)?;
+        let packet_id = u16::from_bytes(buf)?;
+        let body_length = u16::from_bytes(buf)?;
+
+        let partial = Self {
+            id,
+            packet_id,
+            body_length,
+        };
+
+        Ok(partial)
+    }
+}
+// endregion

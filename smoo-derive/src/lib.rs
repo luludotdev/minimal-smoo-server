@@ -40,7 +40,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 written
             }
 
-            fn from_bytes(buf: &mut bytes::Bytes) -> color_eyre::Result<Self> {
+            fn from_bytes<T: bytes::Buf>(buf: &mut T) -> color_eyre::Result<Self> {
                 Ok(Self {
                     #(#readers)*
                 })

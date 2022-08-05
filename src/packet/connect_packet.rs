@@ -1,3 +1,4 @@
+use bytes::Buf;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use smoo_derive::PacketBytes;
@@ -28,7 +29,7 @@ impl PacketBytes for ConnectionType {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut bytes::Bytes) -> Result<Self> {
+    fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let id = u16::from_bytes(buf)?;
         match id {
             0 => Ok(ConnectionType::Init),
