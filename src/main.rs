@@ -1,16 +1,13 @@
 use std::net::IpAddr;
 
-use bytes::BytesMut;
 use clap::Parser;
 use color_eyre::Result;
 use once_cell::sync::Lazy;
-use packet::{CapPacket, Packet};
 use tracing_error::ErrorLayer;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, EnvFilter};
 
 use crate::config::Config;
-use crate::packet::PacketBytes;
 use crate::server::Server;
 
 mod config;
@@ -75,18 +72,6 @@ async fn main() -> Result<()> {
 
     let server = Server::new(&args, config.clone()).await;
     // server.listen();
-
-    let uid = uuid::Uuid::new_v4();
-    let cap = CapPacket {
-        position: Default::default(),
-        quaternion: Default::default(),
-        cap_anim: Default::default(),
-        cap_out: Default::default(),
-    };
-
-    dbg!(&cap);
-    let packet = cap.into_header(uid);
-    dbg!(&packet);
 
     Ok(())
 }
