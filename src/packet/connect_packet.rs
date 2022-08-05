@@ -15,7 +15,7 @@ pub struct ConnectPacket {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u16)]
+#[repr(u32)]
 pub enum ConnectionType {
     Init = 0,
     Reconnect = 1,
@@ -24,13 +24,13 @@ pub enum ConnectionType {
 impl PacketBytes for ConnectionType {
     #[inline]
     fn write_bytes(&self, buf: &mut bytes::BytesMut) -> usize {
-        let u16 = *self as u16;
-        u16.write_bytes(buf)
+        let u32 = *self as u32;
+        u32.write_bytes(buf)
     }
 
     #[inline]
     fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
-        let id = u16::from_bytes(buf)?;
+        let id = u32::from_bytes(buf)?;
         match id {
             0 => Ok(ConnectionType::Init),
             1 => Ok(ConnectionType::Reconnect),
