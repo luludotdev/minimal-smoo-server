@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
     let config = Config::load().await?.shared();
 
     let server = Server::new(&args, config.clone()).await;
-    // server.listen();
+    server.listen().await?;
 
     Ok(())
 }
