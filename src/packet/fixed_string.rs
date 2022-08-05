@@ -7,7 +7,7 @@ use color_eyre::Result;
 
 use super::PacketBytes;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FixedString<const N: usize> {
     inner: [u8; N],
 }

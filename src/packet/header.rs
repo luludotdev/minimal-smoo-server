@@ -1,5 +1,5 @@
 use bytes::{BufMut, Bytes, BytesMut};
-use color_eyre::Result;
+use color_eyre::{Report, Result};
 use uuid::Uuid;
 
 use super::cap_packet::CapPacket;
@@ -13,18 +13,23 @@ use super::player_packet::PlayerPacket;
 use super::shine_packet::ShinePacket;
 use super::PacketBytes;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PacketHeader {
     pub id: Uuid,
     pub packet: PacketType,
 }
 
 impl PacketHeader {
-    pub fn bytes(&self) -> Bytes {
+    pub fn to_bytes(self) -> Bytes {
         let mut buf = BytesMut::with_capacity(128);
         self.write_bytes(&mut buf);
 
         buf.freeze()
+    }
+
+    #[inline]
+    pub fn from_bytes(mut buf: Bytes) -> Result<Self> {
+        <Self as PacketBytes>::from_bytes(&mut buf)
     }
 }
 
@@ -49,18 +54,120 @@ impl PacketBytes for PacketHeader {
     }
 
     fn from_bytes(buf: &mut Bytes) -> Result<Self> {
-        todo!()
+        let id = <Uuid as PacketBytes>::from_bytes(buf)?;
+        let packet_id = u8::from_bytes(buf)?;
+
+        // Packet length
+        let _ = u16::from_bytes(buf)?;
+
+        match packet_id {
+            1 => {
+                let packet = InitPacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            2 => {
+                let packet = PlayerPacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            3 => {
+                let packet = CapPacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            4 => {
+                let packet = GamePacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            5 => Ok(PacketHeader {
+                id,
+                packet: PacketType::Tag,
+            }),
+
+            6 => {
+                let packet = ConnectPacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            7 => Ok(PacketHeader {
+                id,
+                packet: PacketType::Disconnect,
+            }),
+
+            8 => {
+                let packet = CostumePacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            9 => {
+                let packet = ShinePacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            10 => {
+                let packet = CapturePacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            11 => {
+                let packet = ChangeStagePacket::from_bytes(buf)?;
+                Ok(PacketHeader {
+                    id,
+                    packet: packet.into(),
+                })
+            }
+
+            _ => Ok(PacketHeader {
+                id,
+                packet: PacketType::Unknown,
+            }),
+        }
     }
 }
 
 impl From<PacketHeader> for Bytes {
     #[inline]
     fn from(header: PacketHeader) -> Self {
-        header.bytes()
+        header.to_bytes()
     }
 }
 
-#[derive(Debug)]
+impl TryFrom<Bytes> for PacketHeader {
+    type Error = Report;
+
+    #[inline]
+    fn try_from(buf: Bytes) -> Result<Self, Self::Error> {
+        Self::from_bytes(buf)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PacketType {
     Unknown,
     Init(InitPacket),

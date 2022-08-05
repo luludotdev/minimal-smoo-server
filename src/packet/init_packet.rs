@@ -3,7 +3,7 @@ use smoo_derive::PacketBytes;
 use super::header::PacketType;
 use super::traits::Packet;
 
-#[derive(Debug, PacketBytes)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct InitPacket {
     pub max_players: u16,
 }

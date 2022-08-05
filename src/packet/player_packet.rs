@@ -4,7 +4,7 @@ use smoo_derive::PacketBytes;
 use super::header::PacketType;
 use super::traits::Packet;
 
-#[derive(Debug, PacketBytes)]
+#[derive(Debug, Clone, Copy, PartialEq, PacketBytes)]
 pub struct PlayerPacket {
     pub position: Vec3,
     pub quaternion: Quat,

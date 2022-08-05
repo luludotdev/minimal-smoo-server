@@ -4,7 +4,7 @@ use super::fixed_string::FixedString;
 use super::header::PacketType;
 use super::traits::Packet;
 
-#[derive(Debug, PacketBytes)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct ChangeStagePacket {
     pub id: FixedString<0x10>,
     pub stage: FixedString<0x30>,

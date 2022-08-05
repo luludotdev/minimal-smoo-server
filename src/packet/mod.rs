@@ -19,6 +19,7 @@ pub use change_stage_packet::ChangeStagePacket;
 pub use connect_packet::ConnectPacket;
 pub use costume_packet::CostumePacket;
 pub use game_packet::GamePacket;
+pub use header::*;
 pub use init_packet::InitPacket;
 pub use player_packet::PlayerPacket;
 pub use shine_packet::ShinePacket;

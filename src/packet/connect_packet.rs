@@ -6,7 +6,7 @@ use super::fixed_string::FixedString;
 use super::header::PacketType;
 use super::traits::{Packet, PacketBytes};
 
-#[derive(Debug, PacketBytes)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
 pub struct ConnectPacket {
     pub connection_type: ConnectionType,
     pub max_players: u16,
