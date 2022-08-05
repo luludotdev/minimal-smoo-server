@@ -1,4 +1,5 @@
 use bytes::{Bytes, BytesMut};
+use color_eyre::Result;
 use uuid::Uuid;
 
 use super::cap_packet::CapPacket;
@@ -23,7 +24,7 @@ impl PacketBytes for PacketHeader {
         todo!()
     }
 
-    fn from_bytes(buf: &mut Bytes) -> Self {
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         todo!()
     }
 }
@@ -49,7 +50,7 @@ impl PacketBytes for PacketType {
         todo!()
     }
 
-    fn from_bytes(_: &mut Bytes) -> Self {
+    fn from_bytes(_: &mut Bytes) -> Result<Self> {
         unimplemented!()
     }
 }

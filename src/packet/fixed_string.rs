@@ -1,6 +1,8 @@
 use std::fmt::Display;
 use std::str::Utf8Error;
 
+use color_eyre::Result;
+
 use super::PacketBytes;
 
 #[derive(Debug)]
@@ -29,8 +31,8 @@ impl<const N: usize> PacketBytes for FixedString<N> {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut bytes::Bytes) -> Self {
-        let inner = <[u8; N] as PacketBytes>::from_bytes(buf);
-        Self { inner }
+    fn from_bytes(buf: &mut bytes::Bytes) -> Result<Self> {
+        let inner = <[u8; N] as PacketBytes>::from_bytes(buf)?;
+        Ok(Self { inner })
     }
 }

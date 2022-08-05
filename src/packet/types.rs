@@ -1,4 +1,5 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use color_eyre::Result;
 use glam::{Quat, Vec3};
 use uuid::Uuid;
 
@@ -15,9 +16,9 @@ impl PacketBytes for bool {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Self {
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         let uint = buf.get_u8();
-        uint == 1
+        Ok(uint == 1)
     }
 }
 
@@ -29,11 +30,11 @@ impl<const N: usize> PacketBytes for [u8; N] {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Self {
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         let mut dst = [0u8; N];
         buf.copy_to_slice(&mut dst);
 
-        dst
+        Ok(dst)
     }
 }
 
@@ -48,7 +49,7 @@ impl<const N: usize> PacketBytes for [f32; N] {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Self {
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         let fsize = std::mem::size_of::<f32>();
         let bytes = std::mem::size_of::<Self>();
 
@@ -58,8 +59,11 @@ impl<const N: usize> PacketBytes for [f32; N] {
             .map(|mut chunk| chunk.get_f32_le())
             .collect::<Vec<_>>();
 
-        // TODO: Fallible
-        vec.try_into().unwrap()
+        let array = vec
+            .try_into()
+            .map_err(|_| color_eyre::eyre::eyre!("invalid vector of floats"))?;
+
+        Ok(array)
     }
 }
 // endregion
@@ -77,8 +81,8 @@ macro_rules! packet_bytes_num {
                 }
 
                 #[inline]
-                fn from_bytes(buf: &mut bytes::Bytes) -> Self {
-                    buf.[<get_ $type>]()
+                fn from_bytes(buf: &mut bytes::Bytes) -> color_eyre::Result<Self> {
+                    Ok(buf.[<get_ $type>]())
                 }
             }
         }
@@ -97,8 +101,8 @@ macro_rules! packet_bytes_num_le {
                 }
 
                 #[inline]
-                fn from_bytes(buf: &mut bytes::Bytes) -> Self {
-                    buf.[<get_ $type _le>]()
+                fn from_bytes(buf: &mut bytes::Bytes) -> color_eyre::Result<Self> {
+                    Ok(buf.[<get_ $type _le>]())
                 }
             }
         }
@@ -124,11 +128,12 @@ impl PacketBytes for Uuid {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Self {
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
         let mut dst = [0u8; 16];
         buf.copy_to_slice(&mut dst);
 
-        Uuid::from_bytes(dst)
+        let uuid = Uuid::from_bytes(dst);
+        Ok(uuid)
     }
 }
 
@@ -143,12 +148,14 @@ impl PacketBytes for Vec3 {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Self {
-        Self {
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+        let vec3 = Self {
             x: buf.get_f32_le(),
             y: buf.get_f32_le(),
             z: buf.get_f32_le(),
-        }
+        };
+
+        Ok(vec3)
     }
 }
 
@@ -164,13 +171,15 @@ impl PacketBytes for Quat {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut Bytes) -> Self {
-        Quat::from_xyzw(
+    fn from_bytes(buf: &mut Bytes) -> Result<Self> {
+        let quat = Quat::from_xyzw(
             buf.get_f32_le(),
             buf.get_f32_le(),
             buf.get_f32_le(),
             buf.get_f32_le(),
-        )
+        );
+
+        Ok(quat)
     }
 }
 // endregion

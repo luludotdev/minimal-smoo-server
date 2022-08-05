@@ -1,3 +1,5 @@
+use color_eyre::eyre::eyre;
+use color_eyre::Result;
 use smoo_derive::PacketBytes;
 
 use super::fixed_string::FixedString;
@@ -26,13 +28,13 @@ impl PacketBytes for ConnectionType {
     }
 
     #[inline]
-    fn from_bytes(buf: &mut bytes::Bytes) -> Self {
-        match u16::from_bytes(buf) {
-            0 => ConnectionType::Init,
-            1 => ConnectionType::Reconnect,
+    fn from_bytes(buf: &mut bytes::Bytes) -> Result<Self> {
+        let id = u16::from_bytes(buf)?;
+        match id {
+            0 => Ok(ConnectionType::Init),
+            1 => Ok(ConnectionType::Reconnect),
 
-            // TODO: Fallible
-            _ => panic!("invalid connection typr"),
+            _ => Err(eyre!("invalid connection type: {id}")),
         }
     }
 }

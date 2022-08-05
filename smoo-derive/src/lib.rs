@@ -25,10 +25,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let readers = fields.into_iter().map(|f| {
         let field_name = f.ident;
         let field_ty = f.ty;
-        dbg!(&field_ty);
 
         quote! {
-            #field_name: <#field_ty as crate::packet::PacketBytes>::from_bytes(buf),
+            #field_name: <#field_ty as crate::packet::PacketBytes>::from_bytes(buf)?,
         }
     });
 
@@ -41,10 +40,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 written
             }
 
-            fn from_bytes(buf: &mut bytes::Bytes) -> Self {
-                Self {
+            fn from_bytes(buf: &mut bytes::Bytes) -> color_eyre::Result<Self> {
+                Ok(Self {
                     #(#readers)*
-                }
+                })
             }
         }
     };
