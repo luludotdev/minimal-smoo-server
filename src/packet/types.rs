@@ -1,5 +1,6 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use glam::{Quat, Vec3};
+use uuid::Uuid;
 
 use super::traits::PacketBytes;
 
@@ -12,6 +13,20 @@ impl PacketBytes for bool {
     fn from_bytes(bytes: &mut Bytes) -> Self {
         let uint = bytes.get_u8();
         uint == 1
+    }
+}
+
+impl PacketBytes for Uuid {
+    fn write_bytes(&self, bytes: &mut BytesMut) {
+        let uuid = self.into_bytes();
+        bytes.put(&uuid[..]);
+    }
+
+    fn from_bytes(bytes: &mut Bytes) -> Self {
+        let mut dst = [0u8; 16];
+        bytes.copy_to_slice(&mut dst);
+
+        Uuid::from_bytes(dst)
     }
 }
 
