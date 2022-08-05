@@ -44,7 +44,6 @@ impl Server {
                 let mut frames = Framed::new(stream, PacketCodec);
 
                 let packet = frames.next().await;
-                dbg!(packet);
             });
         }
     }

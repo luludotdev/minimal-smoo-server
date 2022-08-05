@@ -24,7 +24,6 @@ impl Decoder for PacketCodec {
             return Ok(None);
         }
 
-        dbg!(&buf);
         let packet = partial.upgrade(buf)?;
         buf.reserve(PacketHeader::buf_size());
 
