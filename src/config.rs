@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 
 use color_eyre::eyre::Context;
 use color_eyre::Result;
-use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use uuid::Uuid;
@@ -64,12 +63,11 @@ impl Config {
 // endregion
 
 // region: ServerConfig
-#[derive(Debug, Deserialize, Serialize, Getters)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ServerConfig {
     host: Option<IpAddr>,
     port: Option<u16>,
 
-    #[getter(skip)]
     pub max_players: NonZeroU8,
 }
 
@@ -81,6 +79,18 @@ impl Default for ServerConfig {
             port: Default::default(),
             max_players: NonZeroU8::new(8).unwrap(),
         }
+    }
+}
+
+impl ServerConfig {
+    #[inline]
+    pub fn host(&self) -> Option<IpAddr> {
+        self.host
+    }
+
+    #[inline]
+    pub fn port(&self) -> Option<u16> {
+        self.port
     }
 }
 // endregion
