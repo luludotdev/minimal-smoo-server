@@ -7,6 +7,7 @@ use color_eyre::eyre::Context;
 use color_eyre::Result;
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
+use tokio::fs;
 use uuid::Uuid;
 
 // region: Config
@@ -30,11 +31,9 @@ impl Config {
             return Ok(config);
         }
 
-        let bytes = tokio::fs::read(&path)
-            .await
-            .context("failed to read config")?;
-
+        let bytes = fs::read(&path).await.context("failed to read config")?;
         let result = toml::from_slice::<Config>(&bytes);
+
         match result {
             Ok(config) => Ok(config),
             Err(_) => {
@@ -52,7 +51,14 @@ impl Config {
     }
 
     pub async fn save(&self) -> Result<()> {
-        todo!()
+        let path = Self::path_buf();
+        let serialized = toml::to_string_pretty(&self)?;
+
+        fs::write(path, serialized)
+            .await
+            .context("failed to write config")?;
+
+        Ok(())
     }
 }
 // endregion
