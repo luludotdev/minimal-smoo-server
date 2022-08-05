@@ -1,3 +1,4 @@
+mod codec;
 mod fixed_string;
 mod header;
 mod traits;
@@ -16,6 +17,7 @@ mod shine_packet;
 pub use cap_packet::CapPacket;
 pub use capture_packet::CapturePacket;
 pub use change_stage_packet::ChangeStagePacket;
+pub use codec::PacketCodec;
 pub use connect_packet::{ConnectPacket, ConnectionType};
 pub use costume_packet::CostumePacket;
 pub use game_packet::GamePacket;

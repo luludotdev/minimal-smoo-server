@@ -1,8 +1,13 @@
 use std::net::SocketAddr;
 
+use color_eyre::Result;
+use futures::StreamExt;
+use tokio::net::TcpListener;
+use tokio_util::codec::Framed;
 use tracing::info;
 
 use crate::config::SharedConfig;
+use crate::packet::PacketCodec;
 use crate::Args;
 
 pub struct Server {
@@ -28,8 +33,19 @@ impl Server {
         Self { addr, config }
     }
 
-    pub fn listen(&self) {
+    pub async fn listen(&self) -> Result<()> {
         info!(addr = %self.addr, "Server listening");
-        todo!()
+        let listener = TcpListener::bind(self.addr).await?;
+
+        loop {
+            let (stream, addr) = listener.accept().await?;
+
+            tokio::spawn(async move {
+                let mut frames = Framed::new(stream, PacketCodec);
+
+                let packet = frames.next().await;
+                dbg!(packet);
+            });
+        }
     }
 }
