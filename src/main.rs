@@ -11,6 +11,7 @@ use crate::config::Config;
 use crate::server::Server;
 
 mod config;
+mod packet;
 mod server;
 
 static VERSION: Lazy<String> = Lazy::new(|| {
