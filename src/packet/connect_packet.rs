@@ -1,13 +1,13 @@
 use bytes::Buf;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
-use smoo_derive::PacketBytes;
+use smoo_derive::Packet;
 
 use super::fixed_string::FixedString;
-use super::header::PacketData;
-use super::traits::{IntoPacket, PacketBytes};
+use super::traits::PacketBytes;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PacketBytes)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Packet)]
+#[packet("Connect")]
 pub struct ConnectPacket {
     pub connection_type: ConnectionType,
     pub max_players: u16,
@@ -39,12 +39,3 @@ impl PacketBytes for ConnectionType {
         }
     }
 }
-
-impl From<ConnectPacket> for PacketData {
-    #[inline(always)]
-    fn from(packet: ConnectPacket) -> Self {
-        Self::Connect(packet)
-    }
-}
-
-impl IntoPacket for ConnectPacket {}

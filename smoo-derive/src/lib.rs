@@ -1,10 +1,26 @@
 use proc_macro::{self, TokenStream};
 use quote::quote;
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields};
+use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, LitStr};
 
-#[proc_macro_derive(PacketBytes)]
+#[proc_macro_derive(Packet, attributes(packet))]
 pub fn derive(input: TokenStream) -> TokenStream {
-    let DeriveInput { ident, data, .. } = parse_macro_input!(input);
+    let DeriveInput {
+        ident, data, attrs, ..
+    } = parse_macro_input!(input);
+
+    let value = attrs
+        .iter()
+        .filter(|attr| attr.path.is_ident("packet"))
+        .map(|attr| {
+            let meta: LitStr = attr.parse_args().unwrap();
+            meta
+        })
+        .next();
+
+    let name = match value {
+        Some(value) => value.parse::<syn::Type>().unwrap(),
+        None => panic!("missing #[packet()] attribute"),
+    };
 
     let fields = match data {
         Data::Struct(DataStruct {
@@ -46,6 +62,17 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 })
             }
         }
+
+        #[automatically_derived]
+        impl From<#ident> for crate::packet::PacketData {
+            #[inline(always)]
+            fn from(packet: #ident) -> Self {
+                Self::#name(packet)
+            }
+        }
+
+        #[automatically_derived]
+        impl crate::packet::IntoPacket for #ident {}
     };
 
     output.into()

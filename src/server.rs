@@ -39,6 +39,7 @@ impl Server {
 
         loop {
             let (stream, addr) = listener.accept().await?;
+            let _ = stream.set_nodelay(true);
 
             tokio::spawn(async move {
                 let mut frames = Framed::new(stream, PacketCodec);

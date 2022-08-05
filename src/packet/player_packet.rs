@@ -1,10 +1,8 @@
 use glam::{Quat, Vec3};
-use smoo_derive::PacketBytes;
+use smoo_derive::Packet;
 
-use super::header::PacketData;
-use super::traits::IntoPacket;
-
-#[derive(Debug, Clone, Copy, PartialEq, PacketBytes)]
+#[derive(Debug, Clone, Copy, PartialEq, Packet)]
+#[packet("Player")]
 pub struct PlayerPacket {
     pub position: Vec3,
     pub quaternion: Quat,
@@ -12,12 +10,3 @@ pub struct PlayerPacket {
     pub act: u16,
     pub subact: u16,
 }
-
-impl From<PlayerPacket> for PacketData {
-    #[inline(always)]
-    fn from(packet: PlayerPacket) -> Self {
-        Self::Player(packet)
-    }
-}
-
-impl IntoPacket for PlayerPacket {}
