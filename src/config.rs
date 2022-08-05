@@ -62,7 +62,9 @@ impl Config {
 pub struct ServerConfig {
     host: Option<IpAddr>,
     port: Option<u16>,
-    max_players: NonZeroU8,
+
+    #[getter(skip)]
+    pub max_players: NonZeroU8,
 }
 
 impl Default for ServerConfig {
@@ -80,7 +82,7 @@ impl Default for ServerConfig {
 // region: MoonConfig
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MoonConfig {
-    persist: bool,
+    pub persist: bool,
     persist_file: PathBuf,
 }
 
@@ -96,11 +98,6 @@ impl Default for MoonConfig {
 
 impl MoonConfig {
     #[inline]
-    pub fn persist(&self) -> bool {
-        self.persist
-    }
-
-    #[inline]
     pub fn persist_file(&self) -> &Path {
         &self.persist_file
     }
@@ -108,10 +105,10 @@ impl MoonConfig {
 // endregion
 
 // region: CostumesConfig
-#[derive(Debug, Deserialize, Serialize, Getters)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CostumesConfig {
-    banned_costumes: HashSet<String>,
-    allowed_players: HashSet<Uuid>,
+    pub banned_costumes: HashSet<String>,
+    pub allowed_players: HashSet<Uuid>,
 }
 
 impl Default for CostumesConfig {
