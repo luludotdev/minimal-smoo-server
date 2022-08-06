@@ -32,7 +32,17 @@ impl Players {
     }
 
     #[inline]
-    pub fn get_all(&self) -> Vec<&Player> {
-        self.map.values().collect::<Vec<_>>()
+    pub fn ids(&self) -> impl Iterator<Item = Uuid> + '_ {
+        self.map.keys().copied()
+    }
+
+    #[inline]
+    pub fn all_players(&self) -> impl Iterator<Item = &Player> + '_ {
+        self.map.values()
+    }
+
+    #[inline]
+    pub fn all_players_mut(&mut self) -> impl Iterator<Item = &mut Player> + '_ {
+        self.map.values_mut()
     }
 }

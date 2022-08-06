@@ -3,7 +3,6 @@ use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use flume::{Receiver, Sender};
 use futures::stream::{SplitSink, SplitStream};
@@ -15,9 +14,10 @@ use tracing::{debug, error, info};
 use uuid::Uuid;
 
 use crate::config::SharedConfig;
+use crate::moons::Moons;
 use crate::packet::{
     ConnectPacket, ConnectionType, CostumePacket, InitPacket, IntoPacket, Packet, PacketCodec,
-    PacketData,
+    PacketData, ShinePacket,
 };
 use crate::peer::Peer;
 use crate::peers::Peers;
@@ -35,7 +35,8 @@ pub struct Server {
 
     peers: RwLock<Peers>,
     players: RwLock<Players>,
-    // shines: RwLock<HashSet<i32>>,
+    moons: RwLock<Moons>,
+
     process_tx: Sender<(Uuid, Packet)>,
     process_rx: Receiver<(Uuid, Packet)>,
 }
@@ -56,7 +57,7 @@ pub enum ReplyType {
 }
 
 impl Server {
-    pub async fn new(args: &Args, config: SharedConfig) -> Arc<Self> {
+    pub async fn new(args: &Args, config: SharedConfig) -> Result<Arc<Self>> {
         let addr = {
             let config = config.read().await;
 
@@ -69,18 +70,21 @@ impl Server {
             SocketAddr::from((host, port))
         };
 
+        let moons = Moons::load(config.clone()).await?;
         let (p_tx, p_rx) = flume::unbounded();
+
         let server = Self {
             addr,
             config,
             peers: Default::default(),
             players: Default::default(),
-            // shines: Default::default(),
+            moons: RwLock::new(moons),
+
             process_tx: p_tx,
             process_rx: p_rx,
         };
 
-        Arc::new(server)
+        Ok(Arc::new(server))
     }
 
     pub async fn listen(self: Arc<Self>) -> Result<()> {
@@ -277,7 +281,7 @@ impl Server {
                 let peer = peers.get_mut(&id);
 
                 if let Ok(peer) = peer {
-                    let players = players.get_all();
+                    let players = players.all_players();
                     let positions = players.into_iter().map(|player| {
                         let stage = player.stage().map(ToOwned::to_owned);
                         let pos = player.last_pos.as_ref().copied();
@@ -300,13 +304,13 @@ impl Server {
             }
 
             PacketData::Costume(data) => {
-                let mut players = self.players.write().await;
-                let player = players.get_mut(&id)?;
+                {
+                    let mut players = self.players.write().await;
+                    let player = players.get_mut(&id)?;
 
-                player.loaded = true;
-                player.set_costume(*data)?;
-
-                // TODO: Sync shines
+                    player.loaded = true;
+                    player.set_costume(*data)?;
+                }
 
                 let fallback = "Mario".parse().unwrap();
                 let cap = data.cap.try_to_string()?;
@@ -315,7 +319,7 @@ impl Server {
                 let (is_allowed, is_cap_banned, is_body_banned) = {
                     let config = self.config.read().await;
 
-                    let is_allowed = config.costumes.is_allowed(&player.id);
+                    let is_allowed = config.costumes.is_allowed(&id);
                     let is_cap_banned = config.costumes.is_banned(&cap);
                     let is_body_banned = config.costumes.is_banned(&body);
 
@@ -335,10 +339,30 @@ impl Server {
                 let outgoing = CostumePacket { cap, body };
                 let outgoing = outgoing.into_packet(packet.id);
 
+                self.sync_moons().await?;
                 ReplyType::Broadcast(outgoing)
             }
 
-            // PacketData::Shine(_) => todo!(),
+            PacketData::Shine(data) => {
+                // Insert moons
+                {
+                    let mut players = self.players.write().await;
+                    let player = players.get_mut(&id)?;
+
+                    if player.loaded {
+                        let mut moons = self.moons.write().await;
+                        moons.insert(data.id, data.is_grand).await?;
+
+                        if player.moons.get(&data.id).is_none() {
+                            // TODO: Log
+                            player.moons.insert(data.id, data.is_grand);
+                        }
+                    }
+                }
+
+                self.sync_moons().await?;
+                ReplyType::Broadcast(packet)
+            }
 
             // Broadcast as-is
             PacketData::Player(_)
@@ -350,5 +374,35 @@ impl Server {
         };
 
         Ok(reply)
+    }
+
+    async fn sync_moons(&self) -> Result<()> {
+        let mut players = self.players.write().await;
+        for player in players.all_players_mut() {
+            self.sync_player_moons(player).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn sync_player_moons(&self, player: &mut Player) -> Result<()> {
+        let moons = self.moons.read().await;
+        let diff = moons.difference(&player.moons);
+
+        if diff.is_empty() {
+            return Ok(());
+        }
+
+        let mut peers = self.peers.write().await;
+        let peer = peers.get_mut(&player.id)?;
+
+        for (id, is_grand) in diff {
+            player.moons.insert(id, is_grand);
+
+            let packet = ShinePacket { id, is_grand };
+            peer.send_nil_uuid(packet).await;
+        }
+
+        Ok(())
     }
 }

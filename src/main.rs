@@ -38,7 +38,6 @@ use clap::Parser;
 use color_eyre::Result;
 use once_cell::sync::Lazy;
 use tracing_error::ErrorLayer;
-use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, EnvFilter};
 
@@ -46,6 +45,7 @@ use crate::config::Config;
 use crate::server::Server;
 
 mod config;
+mod moons;
 mod packet;
 mod peer;
 mod peers;
@@ -108,7 +108,7 @@ async fn main() -> Result<()> {
         .init();
 
     let config = Config::load().await?.shared();
-    let server = Server::new(&args, config.clone()).await;
+    let server = Server::new(&args, config.clone()).await?;
 
     let listen_handle = tokio::spawn(server.clone().listen());
     let process_handle = tokio::spawn(server.process_packets());

@@ -3,6 +3,7 @@ use std::fmt::Display;
 use color_eyre::{Report, Result};
 use uuid::Uuid;
 
+use crate::moons::MoonMap;
 use crate::packet::{CostumePacket, GamePacket, PlayerPacket};
 
 // region: Player
@@ -16,6 +17,7 @@ pub struct Player {
     pub scenario: Option<u8>,
     pub is_2d: bool,
 
+    pub moons: MoonMap,
     pub last_pos: Option<PlayerPacket>,
     pub last_game: Option<GamePacket>,
 }
@@ -32,6 +34,7 @@ impl Player {
             scenario: None,
             is_2d: false,
 
+            moons: Default::default(),
             last_pos: None,
             last_game: None,
         }

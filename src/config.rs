@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::net::IpAddr;
 use std::num::NonZeroU8;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use color_eyre::eyre::Context;
@@ -108,7 +108,7 @@ impl ServerConfig {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MoonConfig {
     pub persist: bool,
-    persist_file: PathBuf,
+    pub persist_file: PathBuf,
 }
 
 impl Default for MoonConfig {
@@ -118,13 +118,6 @@ impl Default for MoonConfig {
             persist: Default::default(),
             persist_file: PathBuf::from("./moons.json"),
         }
-    }
-}
-
-impl MoonConfig {
-    #[inline]
-    pub fn persist_file(&self) -> &Path {
-        &self.persist_file
     }
 }
 // endregion
