@@ -19,7 +19,7 @@ impl<const N: usize> FixedString<N> {
     }
 
     #[inline]
-    pub fn try_into_string(&self) -> Result<String, Utf8Error> {
+    pub fn try_to_string(&self) -> Result<String, Utf8Error> {
         Ok(self.try_as_str()?.to_owned())
     }
 }
@@ -74,6 +74,6 @@ impl<const N: usize> TryFrom<FixedString<N>> for String {
 
     #[inline]
     fn try_from(value: FixedString<N>) -> Result<Self, Self::Error> {
-        value.try_into_string()
+        value.try_to_string()
     }
 }
