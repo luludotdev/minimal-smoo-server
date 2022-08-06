@@ -314,9 +314,34 @@ impl Server {
 
                 // TODO: Sync shines
 
-                // TODO: Banned costumes
+                let fallback = "Mario".parse().unwrap();
+                let cap = data.cap.try_to_string()?;
+                let body = data.body.try_to_string()?;
 
-                ReplyType::Broadcast(packet)
+                let (is_allowed, is_cap_banned, is_body_banned) = {
+                    let config = self.config.read().await;
+
+                    let is_allowed = config.costumes.is_allowed(&player.id);
+                    let is_cap_banned = config.costumes.is_banned(&cap);
+                    let is_body_banned = config.costumes.is_banned(&body);
+
+                    (is_allowed, is_cap_banned, is_body_banned)
+                };
+
+                let cap = match (is_cap_banned, is_allowed) {
+                    (true, false) => fallback,
+                    _ => cap.parse()?,
+                };
+
+                let body = match (is_body_banned, is_allowed) {
+                    (true, false) => fallback,
+                    _ => body.parse()?,
+                };
+
+                let outgoing = CostumePacket { cap, body };
+                let outgoing = outgoing.into_packet(packet.id);
+
+                ReplyType::Broadcast(outgoing)
             }
 
             // PacketData::Shine(_) => todo!(),

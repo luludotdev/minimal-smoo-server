@@ -20,6 +20,7 @@ pub use change_stage_packet::ChangeStagePacket;
 pub use codec::PacketCodec;
 pub use connect_packet::{ConnectPacket, ConnectionType};
 pub use costume_packet::CostumePacket;
+pub use fixed_string::FixedString;
 pub use game_packet::GamePacket;
 pub use header::*;
 pub use init_packet::InitPacket;
