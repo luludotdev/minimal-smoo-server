@@ -38,7 +38,7 @@ impl Display for Player {
 // endregion
 
 // region: Costume
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Costume {
     pub body: String,
     pub cap: String,

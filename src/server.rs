@@ -3,7 +3,9 @@ use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use color_eyre::eyre::eyre;
 use color_eyre::Result;
+use futures::future::join_all;
 use futures::stream::{SplitSink, SplitStream};
 use futures::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
@@ -13,7 +15,7 @@ use tracing::{debug, error, info};
 use uuid::Uuid;
 
 use crate::config::SharedConfig;
-use crate::packet::{InitPacket, Packet, PacketCodec, PacketData};
+use crate::packet::{CostumePacket, InitPacket, IntoPacket, Packet, PacketCodec, PacketData};
 use crate::peer::Peer;
 use crate::player::Player;
 use crate::players::Players;
@@ -138,8 +140,25 @@ impl Server {
             }
         }
 
-        // TODO: Broadcast connect and costume packet
-        // TODO: Impl broadcast and broadcast_bg
+        // Broadcast connect and costume packets to other clients in the background
+        {
+            self.broadcast_bg(connect_packet);
+
+            let player = self
+                .players
+                .get(&connect_packet.id)
+                .await
+                .ok_or_else(|| eyre!("player should exist in the map"))?;
+
+            let player = player.read().await;
+
+            if let Some(costume) = &player.costume {
+                let costume_packet: CostumePacket = costume.clone().try_into()?;
+                let costume_packet = costume_packet.into_packet(connect_packet.id);
+
+                self.broadcast_bg(costume_packet);
+            }
+        }
 
         while let Some(packet) = stream.next().await {
             match &packet?.data {
@@ -160,5 +179,25 @@ impl Server {
         }
 
         Ok(())
+    }
+
+    async fn broadcast(&self, packet: Packet) {
+        let peers = self.peers.read().await;
+
+        join_all(
+            peers
+                .iter()
+                .filter(|(_, p)| p.id != packet.id)
+                .map(|(_, p)| p.send(packet)),
+        )
+        .await;
+    }
+
+    fn broadcast_bg(self: &Arc<Self>, packet: Packet) {
+        let server = self.clone();
+
+        tokio::spawn(async move {
+            server.broadcast(packet).await;
+        });
     }
 }
