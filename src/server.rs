@@ -142,8 +142,21 @@ impl Server {
         // TODO: Impl broadcast and broadcast_bg
 
         while let Some(packet) = stream.next().await {
-            let packet = packet?;
-            // TODO: Handle packets
+            match &packet?.data {
+                PacketData::Disconnect => break,
+                PacketData::Init(_) => break,
+
+                // PacketData::Player(_) => todo!(),
+                // PacketData::Cap(_) => todo!(),
+                // PacketData::Game(_) => todo!(),
+                // PacketData::Tag => todo!(),
+                // PacketData::Connect(_) => todo!(),
+                // PacketData::Costume(_) => todo!(),
+                // PacketData::Shine(_) => todo!(),
+                // PacketData::Capture(_) => todo!(),
+                // PacketData::ChangeStage(_) => todo!(),
+                _ => (),
+            }
         }
 
         Ok(())
