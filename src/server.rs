@@ -1,14 +1,13 @@
 use std::borrow::ToOwned;
-use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
-use futures::future::join_all;
+use flume::{Receiver, Sender};
 use futures::stream::{SplitSink, SplitStream};
-use futures::{Future, StreamExt};
+use futures::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
 use tokio_util::codec::Framed;
@@ -16,10 +15,14 @@ use tracing::{debug, error, info};
 use uuid::Uuid;
 
 use crate::config::SharedConfig;
-use crate::packet::{CostumePacket, InitPacket, IntoPacket, Packet, PacketCodec, PacketData};
+use crate::packet::{
+    ConnectPacket, ConnectionType, CostumePacket, InitPacket, IntoPacket, Packet, PacketCodec,
+    PacketData,
+};
 use crate::peer::Peer;
+use crate::peers::Peers;
 use crate::player::Player;
-use crate::players::{Players, SharedPlayer};
+use crate::players::Players;
 use crate::Args;
 
 pub type Sink = SplitSink<Framed<TcpStream, PacketCodec>, Packet>;
@@ -30,9 +33,26 @@ pub struct Server {
     addr: SocketAddr,
     config: SharedConfig,
 
-    peers: RwLock<HashMap<Uuid, Peer>>,
-    players: Players,
-    shines: RwLock<HashSet<i32>>,
+    peers: RwLock<Peers>,
+    players: RwLock<Players>,
+    // shines: RwLock<HashSet<i32>>,
+    process_tx: Sender<(Uuid, Packet)>,
+    process_rx: Receiver<(Uuid, Packet)>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ReplyType {
+    /// Invalid, disconnect peer
+    Invalid,
+
+    /// Don't reply
+    None,
+
+    /// Reply to the peer that sent the message
+    Reply(Packet),
+
+    /// Broadcast the reply to everyone except the sender
+    Broadcast(Packet),
 }
 
 impl Server {
@@ -49,12 +69,15 @@ impl Server {
             SocketAddr::from((host, port))
         };
 
+        let (p_tx, p_rx) = flume::unbounded();
         let server = Self {
             addr,
             config,
             peers: Default::default(),
             players: Default::default(),
-            shines: Default::default(),
+            // shines: Default::default(),
+            process_tx: p_tx,
+            process_rx: p_rx,
         };
 
         Arc::new(server)
@@ -86,6 +109,42 @@ impl Server {
         }
     }
 
+    pub async fn process_packets(self: Arc<Self>) {
+        while let Ok((id, packet)) = self.process_rx.recv_async().await {
+            let reply = match self.process_packet(id, packet).await {
+                Ok(reply) => reply,
+
+                Err(error) => {
+                    error!(%error);
+                    continue;
+                }
+            };
+
+            match reply {
+                ReplyType::Invalid => break,
+                ReplyType::None => (),
+
+                ReplyType::Reply(packet) => {
+                    let mut peers = self.peers.write().await;
+                    let peer = match peers.get_mut(&id) {
+                        Some(peer) => peer,
+                        None => {
+                            error!("peer should exist in the map");
+                            continue;
+                        }
+                    };
+
+                    peer.send(packet).await;
+                }
+
+                ReplyType::Broadcast(packet) => {
+                    let mut peers = self.peers.write().await;
+                    peers.broadcast(packet).await;
+                }
+            }
+        }
+    }
+
     async fn handle_connection(self: Arc<Self>, mut stream: Stream, mut peer: Peer) -> Result<()> {
         let max_players = {
             let config = self.config.read().await;
@@ -100,6 +159,7 @@ impl Server {
             None => return Ok(()),
         };
 
+        let id = connect_packet.id;
         let connect_data = match connect_packet.data {
             PacketData::Connect(data) => data,
             _ => {
@@ -110,162 +170,166 @@ impl Server {
 
         // TODO: Max players check
 
-        // Insert peer into server state
+        // Send state of existing players
         {
             let mut peers = self.peers.write().await;
+            let players = self.players.read().await;
 
-            // Disconnect previous connections for this player
-            if let Some(mut stale) = peers.remove(&connect_packet.id) {
-                stale.disconnect().await;
+            for uuid in peers.keys() {
+                if uuid == id {
+                    continue;
+                }
+
+                let player = match players.get(&uuid) {
+                    Some(player) => player,
+                    None => continue,
+                };
+
+                let packet = ConnectPacket {
+                    connection_type: ConnectionType::Init,
+                    max_players,
+                    nickname: player.name.clone().parse()?,
+                };
+
+                let packet = packet.into_packet(player.id);
+                peer.send(packet).await;
+
+                if let Some(costume) = &player.costume {
+                    let costume_packet: CostumePacket = costume.clone().try_into()?;
+                    let costume_packet = costume_packet.into_packet(player.id);
+
+                    peer.send(costume_packet).await;
+                }
             }
 
-            // TODO: Send peer all game packets
-
-            peer.id = connect_packet.id;
-            peers.insert(connect_packet.id, peer);
+            // Insert peer into server state
+            peers.insert(id, peer);
         }
 
         // Insert player into server state
-        match self.players.get(&connect_packet.id).await {
-            Some(player) => {
-                // Reconnect
-                let player = player.read().await;
-                info!("{player} reconnected");
-            }
+        {
+            let mut players = self.players.write().await;
+            match players.get(&connect_packet.id) {
+                Some(player) => {
+                    // Reconnect
+                    info!("{player} reconnected");
+                }
 
-            None => {
-                // First connect
-                let name = connect_data.nickname.try_to_string()?;
-                let player = Player::new(connect_packet.id, name);
+                None => {
+                    // First connect
+                    let name = connect_data.nickname.try_to_string()?;
+                    let player = Player::new(connect_packet.id, name);
 
-                info!("{player} connected");
-                let _ = self.players.insert(player).await;
+                    info!("{player} connected");
+                    let _ = players.insert(id, player);
+                }
             }
         }
 
-        let player = self
-            .players
-            .get(&connect_packet.id)
-            .await
-            .ok_or_else(|| eyre!("player should exist in the map"))?;
-
         // Broadcast connect and costume packets to other clients in the background
         {
-            self.broadcast_bg(connect_packet);
+            let mut peers = self.peers.write().await;
+            peers.broadcast(connect_packet).await;
 
-            let player = player.read().await;
+            let players = self.players.read().await;
+            let player = players
+                .get(&connect_packet.id)
+                .ok_or_else(|| eyre!("player should exist in the map"))?;
+
             if let Some(costume) = &player.costume {
                 let costume_packet: CostumePacket = costume.clone().try_into()?;
                 let costume_packet = costume_packet.into_packet(connect_packet.id);
 
-                self.broadcast_bg(costume_packet);
+                peers.broadcast(costume_packet).await;
             }
         }
 
         while let Some(packet) = stream.next().await {
             let packet = packet?;
-            match &packet.data {
-                PacketData::Disconnect => break,
-                PacketData::Init(_) => break,
-
-                PacketData::Player(data) => {
-                    let stage = {
-                        let mut player = player.write().await;
-                        player.loaded = true;
-                        player.last_pos = Some(*data);
-
-                        player.stage().map(ToOwned::to_owned)
-                    };
-
-                    self.broadcast_map_bg(packet, move |player| {
-                        let stage = stage.clone();
-                        async move {
-                            let player = player.read().await;
-                            let other_stage = player.stage();
-
-                            match (stage, other_stage) {
-                                (Some(player), Some(other)) => player == other,
-                                _ => false,
-                            }
-                        }
-                    })
-                }
-
-                PacketData::Cap(_) => {
-                    let stage = {
-                        let player = player.read().await;
-                        player.stage().map(ToOwned::to_owned)
-                    };
-
-                    self.broadcast_map_bg(packet, move |player| {
-                        let stage = stage.clone();
-                        async move {
-                            let player = player.read().await;
-                            let other_stage = player.stage();
-
-                            match (stage, other_stage) {
-                                (Some(player), Some(other)) => player == other,
-                                _ => false,
-                            }
-                        }
-                    })
-                }
-
-                // PacketData::Game(_) => todo!(),
-                // PacketData::Costume(_) => todo!(),
-                // PacketData::Shine(_) => todo!(),
-                PacketData::Capture(_) | PacketData::ChangeStage(_) => {
-                    self.broadcast(packet).await;
-                }
-
-                _ => (),
-            }
+            self.process_tx.send((id, packet))?;
         }
+
+        let disconnect_packet = Packet {
+            id,
+            data: PacketData::Disconnect,
+        };
+
+        let mut peers = self.peers.write().await;
+        peers.remove(&id).await;
+        peers.broadcast(disconnect_packet).await;
 
         Ok(())
     }
 
-    // region: broadcast
-    async fn broadcast(&self, packet: Packet) {
-        let peers = self.peers.read().await;
+    async fn process_packet(&self, id: Uuid, packet: Packet) -> Result<ReplyType> {
+        let reply = match &packet.data {
+            PacketData::Disconnect | PacketData::Init(_) => ReplyType::Invalid,
 
-        join_all(
-            peers
-                .iter()
-                .filter(|(_, p)| p.id != packet.id)
-                .map(|(_, p)| p.send(packet)),
-        )
-        .await;
+            PacketData::Game(data) => {
+                let mut players = self.players.write().await;
+                let player = players
+                    .get_mut(&id)
+                    .ok_or_else(|| eyre!("player should exist in the map"))?;
+
+                player.scenario = Some(data.scenario);
+                player.is_2d = data.is_2d;
+                player.last_game = Some(*data);
+
+                // Send the position of all players when a player join a stage
+                // If we don't do so, people are gonna be invisible or to their previous position until they move
+                let mut peers = self.peers.write().await;
+                let peer = peers.get_mut(&id);
+
+                if let Some(peer) = peer {
+                    let players = players.get_all();
+                    let positions = players.into_iter().map(|player| {
+                        let stage = player.stage().map(ToOwned::to_owned);
+                        let pos = player.last_pos.as_ref().copied();
+
+                        (stage, player.id, pos)
+                    });
+
+                    let self_stage = data.stage.try_as_str()?;
+                    for (stage, id, last_position) in positions {
+                        if let (Some(player_stage), Some(last_packet)) = (stage, last_position) {
+                            if player_stage == self_stage {
+                                let packet = last_packet.into_packet(id);
+                                peer.send(packet).await;
+                            }
+                        }
+                    }
+                }
+
+                ReplyType::Broadcast(packet)
+            }
+
+            PacketData::Costume(data) => {
+                let mut players = self.players.write().await;
+                let player = players
+                    .get_mut(&id)
+                    .ok_or_else(|| eyre!("player should exist in the map"))?;
+
+                player.loaded = true;
+                player.set_costume(*data)?;
+
+                // TODO: Sync shines
+
+                // TODO: Banned costumes
+
+                ReplyType::Broadcast(packet)
+            }
+
+            // PacketData::Shine(_) => todo!(),
+
+            // Broadcast as-is
+            PacketData::Player(_)
+            | PacketData::Cap(_)
+            | PacketData::Capture(_)
+            | PacketData::ChangeStage(_) => ReplyType::Broadcast(packet),
+
+            _ => ReplyType::None,
+        };
+
+        Ok(reply)
     }
-
-    fn broadcast_bg(self: &Arc<Self>, packet: Packet) {
-        let server = self.clone();
-
-        tokio::spawn(async move {
-            server.broadcast(packet).await;
-        });
-    }
-    // endregion
-
-    // region: broadcast_map
-    async fn broadcast_map<F, Fut>(&self, packet: Packet, map: F)
-    where
-        F: Fn(SharedPlayer) -> Fut,
-        Fut: Future<Output = bool>,
-    {
-        // TODO
-    }
-
-    fn broadcast_map_bg<F, Fut>(self: &Arc<Self>, packet: Packet, map: F)
-    where
-        F: Fn(SharedPlayer) -> Fut + Send + 'static,
-        Fut: Future<Output = bool>,
-    {
-        let server = self.clone();
-
-        tokio::spawn(async move {
-            server.broadcast_map(packet, map).await;
-        });
-    }
-    // endregion
 }

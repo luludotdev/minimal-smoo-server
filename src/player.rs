@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use color_eyre::Report;
+use color_eyre::{Report, Result};
 use uuid::Uuid;
 
 use crate::packet::{CostumePacket, GamePacket, PlayerPacket};
@@ -42,6 +42,13 @@ impl Player {
         self.last_game
             .as_ref()
             .and_then(|x| x.stage.try_as_str().ok())
+    }
+
+    #[inline]
+    pub fn set_costume(&mut self, data: CostumePacket) -> Result<()> {
+        self.costume = Some(data.try_into()?);
+
+        Ok(())
     }
 }
 
