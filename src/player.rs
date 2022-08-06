@@ -14,7 +14,6 @@ pub struct Player {
 
     pub loaded: bool,
     pub costume: Option<Costume>,
-    pub scenario: Option<u8>,
     pub is_2d: bool,
 
     pub moons: MoonMap,
@@ -31,7 +30,6 @@ impl Player {
 
             loaded: false,
             costume: None,
-            scenario: None,
             is_2d: false,
 
             moons: Default::default(),

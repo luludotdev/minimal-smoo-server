@@ -2,7 +2,7 @@ use smoo_derive::Packet;
 
 use super::fixed_string::FixedString;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Packet)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Packet)]
 #[packet("Game")]
 pub struct GamePacket {
     pub is_2d: bool,

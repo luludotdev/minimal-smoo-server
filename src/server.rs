@@ -240,9 +240,16 @@ impl Server {
             data: PacketData::Disconnect,
         };
 
-        let mut peers = self.peers.write().await;
-        peers.remove(&id).await;
-        peers.broadcast(disconnect_packet).await;
+        // Disconnect socket and broadcast to other clients
+        {
+            let mut peers = self.peers.write().await;
+            peers.remove(&id).await;
+            peers.broadcast(disconnect_packet).await;
+        }
+
+        let players = self.players.read().await;
+        let player = players.get(&id)?;
+        info!("{player} disconnected");
 
         Ok(())
     }
@@ -255,7 +262,11 @@ impl Server {
                 let mut players = self.players.write().await;
                 let player = players.get_mut(&id)?;
 
-                player.scenario = Some(data.scenario);
+                let last_game = player.last_game.unwrap_or_default();
+                if last_game.stage != data.stage || last_game.scenario != data.scenario {
+                    info!("{player} -> {}/{}", data.stage, data.scenario);
+                }
+
                 player.is_2d = data.is_2d;
                 player.last_game = Some(*data);
 
@@ -338,7 +349,7 @@ impl Server {
                         moons.insert(data.id, data.is_grand).await?;
 
                         if player.moons.get(&data.id).is_none() {
-                            // TODO: Log
+                            info!("{player} collected moon {}", data.id);
                             player.moons.insert(data.id, data.is_grand);
                         }
                     }

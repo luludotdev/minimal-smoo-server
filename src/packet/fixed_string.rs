@@ -24,7 +24,15 @@ impl<const N: usize> FixedString<N> {
     }
 }
 
+impl<const N: usize> Default for FixedString<N> {
+    #[inline]
+    fn default() -> Self {
+        "".parse().unwrap()
+    }
+}
+
 impl<const N: usize> Display for FixedString<N> {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = self.try_as_str().unwrap();
         write!(f, "{str}")
