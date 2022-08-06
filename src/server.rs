@@ -49,9 +49,6 @@ pub enum ReplyType {
     /// Don't reply
     None,
 
-    /// Reply to the peer that sent the message
-    Reply(Packet),
-
     /// Broadcast the reply to everyone except the sender
     Broadcast(Packet),
 }
@@ -127,20 +124,6 @@ impl Server {
             match reply {
                 ReplyType::Invalid => break,
                 ReplyType::None => (),
-
-                ReplyType::Reply(packet) => {
-                    let mut peers = self.peers.write().await;
-                    let peer = match peers.get_mut(&id) {
-                        Ok(peer) => peer,
-                        Err(error) => {
-                            error!(?error);
-                            continue;
-                        }
-                    };
-
-                    peer.send(packet).await;
-                }
-
                 ReplyType::Broadcast(packet) => {
                     let mut peers = self.peers.write().await;
                     peers.broadcast(packet).await;

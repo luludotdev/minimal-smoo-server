@@ -32,11 +32,6 @@ impl Players {
     }
 
     #[inline]
-    pub fn ids(&self) -> impl Iterator<Item = Uuid> + '_ {
-        self.map.keys().copied()
-    }
-
-    #[inline]
     pub fn all_players(&self) -> impl Iterator<Item = &Player> + '_ {
         self.map.values()
     }
