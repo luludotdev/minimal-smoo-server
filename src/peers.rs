@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use color_eyre::eyre::eyre;
+use color_eyre::Result;
 use uuid::Uuid;
 
 use crate::packet::Packet;
@@ -12,8 +14,10 @@ pub struct Peers {
 
 impl Peers {
     #[inline]
-    pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Peer> {
-        self.map.get_mut(id)
+    pub fn get_mut(&mut self, id: &Uuid) -> Result<&mut Peer> {
+        self.map
+            .get_mut(id)
+            .ok_or_else(|| eyre!("peer should exist in the map"))
     }
 
     #[inline]

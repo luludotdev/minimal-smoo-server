@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use color_eyre::eyre::eyre;
+use color_eyre::Result;
 use uuid::Uuid;
 
 use crate::player::Player;
@@ -11,13 +13,17 @@ pub struct Players {
 
 impl Players {
     #[inline]
-    pub fn get(&self, id: &Uuid) -> Option<&Player> {
-        self.map.get(id)
+    pub fn get(&self, id: &Uuid) -> Result<&Player> {
+        self.map
+            .get(id)
+            .ok_or_else(|| eyre!("player should exist in the map"))
     }
 
     #[inline]
-    pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Player> {
-        self.map.get_mut(id)
+    pub fn get_mut(&mut self, id: &Uuid) -> Result<&mut Player> {
+        self.map
+            .get_mut(id)
+            .ok_or_else(|| eyre!("player should exist in the map"))
     }
 
     #[inline]

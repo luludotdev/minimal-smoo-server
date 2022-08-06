@@ -127,9 +127,9 @@ impl Server {
                 ReplyType::Reply(packet) => {
                     let mut peers = self.peers.write().await;
                     let peer = match peers.get_mut(&id) {
-                        Some(peer) => peer,
-                        None => {
-                            error!("peer should exist in the map");
+                        Ok(peer) => peer,
+                        Err(error) => {
+                            error!(?error);
                             continue;
                         }
                     };
@@ -181,8 +181,8 @@ impl Server {
                 }
 
                 let player = match players.get(&uuid) {
-                    Some(player) => player,
-                    None => continue,
+                    Ok(player) => player,
+                    Err(_) => continue,
                 };
 
                 let packet = ConnectPacket {
@@ -209,7 +209,7 @@ impl Server {
         // Insert player into server state
         {
             let mut players = self.players.write().await;
-            match players.get(&connect_packet.id) {
+            match players.get(&connect_packet.id).ok() {
                 Some(player) => {
                     // Reconnect
                     info!("{player} reconnected");
@@ -232,9 +232,7 @@ impl Server {
             peers.broadcast(connect_packet).await;
 
             let players = self.players.read().await;
-            let player = players
-                .get(&connect_packet.id)
-                .ok_or_else(|| eyre!("player should exist in the map"))?;
+            let player = players.get(&connect_packet.id)?;
 
             if let Some(costume) = &player.costume {
                 let costume_packet: CostumePacket = costume.clone().try_into()?;
@@ -267,9 +265,7 @@ impl Server {
 
             PacketData::Game(data) => {
                 let mut players = self.players.write().await;
-                let player = players
-                    .get_mut(&id)
-                    .ok_or_else(|| eyre!("player should exist in the map"))?;
+                let player = players.get_mut(&id)?;
 
                 player.scenario = Some(data.scenario);
                 player.is_2d = data.is_2d;
@@ -280,7 +276,7 @@ impl Server {
                 let mut peers = self.peers.write().await;
                 let peer = peers.get_mut(&id);
 
-                if let Some(peer) = peer {
+                if let Ok(peer) = peer {
                     let players = players.get_all();
                     let positions = players.into_iter().map(|player| {
                         let stage = player.stage().map(ToOwned::to_owned);
@@ -305,9 +301,7 @@ impl Server {
 
             PacketData::Costume(data) => {
                 let mut players = self.players.write().await;
-                let player = players
-                    .get_mut(&id)
-                    .ok_or_else(|| eyre!("player should exist in the map"))?;
+                let player = players.get_mut(&id)?;
 
                 player.loaded = true;
                 player.set_costume(*data)?;
