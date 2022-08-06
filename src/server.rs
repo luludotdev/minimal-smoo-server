@@ -15,6 +15,8 @@ use uuid::Uuid;
 use crate::config::SharedConfig;
 use crate::packet::{InitPacket, Packet, PacketCodec, PacketData};
 use crate::peer::Peer;
+use crate::player::Player;
+use crate::players::Players;
 use crate::Args;
 
 pub type Sink = SplitSink<Framed<TcpStream, PacketCodec>, Packet>;
@@ -26,6 +28,7 @@ pub struct Server {
     config: SharedConfig,
 
     peers: RwLock<HashMap<Uuid, Peer>>,
+    players: Players,
     shines: RwLock<HashSet<i32>>,
 }
 
@@ -47,6 +50,7 @@ impl Server {
             addr,
             config,
             peers: Default::default(),
+            players: Default::default(),
             shines: Default::default(),
         };
 
@@ -103,7 +107,7 @@ impl Server {
 
         // TODO: Max players check
 
-        // Insert peer and player into server state
+        // Insert peer into server state
         {
             let mut peers = self.peers.write().await;
 
@@ -114,6 +118,24 @@ impl Server {
 
             peer.id = connect_packet.id;
             peers.insert(connect_packet.id, peer);
+        }
+
+        // Insert player into server state
+        match self.players.get(&connect_packet.id).await {
+            Some(player) => {
+                // Reconnect
+                let player = player.read().await;
+                info!("{player} reconnected");
+            }
+
+            None => {
+                // First connect
+                let name = connect_data.nickname.try_to_string()?;
+                let player = Player::new(connect_packet.id, name);
+
+                info!("{player} connected");
+                let _ = self.players.insert(player).await;
+            }
         }
 
         // TODO: Broadcast connect and costume packet

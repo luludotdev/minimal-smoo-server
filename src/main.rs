@@ -47,6 +47,8 @@ use crate::server::Server;
 mod config;
 mod packet;
 mod peer;
+mod player;
+mod players;
 mod server;
 
 static VERSION: Lazy<String> = Lazy::new(|| {
