@@ -1,3 +1,4 @@
+use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::net::SocketAddr;
@@ -7,7 +8,7 @@ use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use futures::future::join_all;
 use futures::stream::{SplitSink, SplitStream};
-use futures::StreamExt;
+use futures::{Future, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
 use tokio_util::codec::Framed;
@@ -18,7 +19,7 @@ use crate::config::SharedConfig;
 use crate::packet::{CostumePacket, InitPacket, IntoPacket, Packet, PacketCodec, PacketData};
 use crate::peer::Peer;
 use crate::player::Player;
-use crate::players::Players;
+use crate::players::{Players, SharedPlayer};
 use crate::Args;
 
 pub type Sink = SplitSink<Framed<TcpStream, PacketCodec>, Packet>;
@@ -142,18 +143,17 @@ impl Server {
             }
         }
 
+        let player = self
+            .players
+            .get(&connect_packet.id)
+            .await
+            .ok_or_else(|| eyre!("player should exist in the map"))?;
+
         // Broadcast connect and costume packets to other clients in the background
         {
             self.broadcast_bg(connect_packet);
 
-            let player = self
-                .players
-                .get(&connect_packet.id)
-                .await
-                .ok_or_else(|| eyre!("player should exist in the map"))?;
-
             let player = player.read().await;
-
             if let Some(costume) = &player.costume {
                 let costume_packet: CostumePacket = costume.clone().try_into()?;
                 let costume_packet = costume_packet.into_packet(connect_packet.id);
@@ -163,19 +163,61 @@ impl Server {
         }
 
         while let Some(packet) = stream.next().await {
-            match &packet?.data {
+            let packet = packet?;
+            match &packet.data {
                 PacketData::Disconnect => break,
                 PacketData::Init(_) => break,
 
-                // PacketData::Player(_) => todo!(),
-                // PacketData::Cap(_) => todo!(),
+                PacketData::Player(data) => {
+                    let stage = {
+                        let mut player = player.write().await;
+                        player.loaded = true;
+                        player.last_pos = Some(*data);
+
+                        player.stage().map(ToOwned::to_owned)
+                    };
+
+                    self.broadcast_map_bg(packet, move |player| {
+                        let stage = stage.clone();
+                        async move {
+                            let player = player.read().await;
+                            let other_stage = player.stage();
+
+                            match (stage, other_stage) {
+                                (Some(player), Some(other)) => player == other,
+                                _ => false,
+                            }
+                        }
+                    })
+                }
+
+                PacketData::Cap(_) => {
+                    let stage = {
+                        let player = player.read().await;
+                        player.stage().map(ToOwned::to_owned)
+                    };
+
+                    self.broadcast_map_bg(packet, move |player| {
+                        let stage = stage.clone();
+                        async move {
+                            let player = player.read().await;
+                            let other_stage = player.stage();
+
+                            match (stage, other_stage) {
+                                (Some(player), Some(other)) => player == other,
+                                _ => false,
+                            }
+                        }
+                    })
+                }
+
                 // PacketData::Game(_) => todo!(),
-                // PacketData::Tag => todo!(),
-                // PacketData::Connect(_) => todo!(),
                 // PacketData::Costume(_) => todo!(),
                 // PacketData::Shine(_) => todo!(),
-                // PacketData::Capture(_) => todo!(),
-                // PacketData::ChangeStage(_) => todo!(),
+                PacketData::Capture(_) | PacketData::ChangeStage(_) => {
+                    self.broadcast(packet).await;
+                }
+
                 _ => (),
             }
         }
@@ -183,6 +225,7 @@ impl Server {
         Ok(())
     }
 
+    // region: broadcast
     async fn broadcast(&self, packet: Packet) {
         let peers = self.peers.read().await;
 
@@ -202,4 +245,27 @@ impl Server {
             server.broadcast(packet).await;
         });
     }
+    // endregion
+
+    // region: broadcast_map
+    async fn broadcast_map<F, Fut>(&self, packet: Packet, map: F)
+    where
+        F: Fn(SharedPlayer) -> Fut,
+        Fut: Future<Output = bool>,
+    {
+        // TODO
+    }
+
+    fn broadcast_map_bg<F, Fut>(self: &Arc<Self>, packet: Packet, map: F)
+    where
+        F: Fn(SharedPlayer) -> Fut + Send + 'static,
+        Fut: Future<Output = bool>,
+    {
+        let server = self.clone();
+
+        tokio::spawn(async move {
+            server.broadcast_map(packet, map).await;
+        });
+    }
+    // endregion
 }

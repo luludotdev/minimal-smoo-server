@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::player::Player;
 
-type SharedPlayer = Arc<RwLock<Player>>;
+pub type SharedPlayer = Arc<RwLock<Player>>;
 
 #[derive(Debug, Default)]
 pub struct Players {

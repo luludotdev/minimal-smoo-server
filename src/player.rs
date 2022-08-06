@@ -3,7 +3,7 @@ use std::fmt::Display;
 use color_eyre::Report;
 use uuid::Uuid;
 
-use crate::packet::CostumePacket;
+use crate::packet::{CostumePacket, GamePacket, PlayerPacket};
 
 // region: Player
 #[derive(Debug)]
@@ -11,9 +11,13 @@ pub struct Player {
     pub id: Uuid,
     pub name: String,
 
+    pub loaded: bool,
     pub costume: Option<Costume>,
     pub scenario: Option<u8>,
     pub is_2d: bool,
+
+    pub last_pos: Option<PlayerPacket>,
+    pub last_game: Option<GamePacket>,
 }
 
 impl Player {
@@ -23,10 +27,21 @@ impl Player {
             id,
             name,
 
-            costume: Default::default(),
-            scenario: Default::default(),
-            is_2d: Default::default(),
+            loaded: false,
+            costume: None,
+            scenario: None,
+            is_2d: false,
+
+            last_pos: None,
+            last_game: None,
         }
+    }
+
+    #[inline]
+    pub fn stage(&self) -> Option<&str> {
+        self.last_game
+            .as_ref()
+            .and_then(|x| x.stage.try_as_str().ok())
     }
 }
 
