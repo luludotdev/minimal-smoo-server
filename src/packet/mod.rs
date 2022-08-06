@@ -35,13 +35,15 @@ mod tests {
     use super::*;
 
     macro_rules! test_packet {
-        ($data:ident) => {{
+        ($data:ident, $size:expr) => {{
             let id = Uuid::new_v4();
             let packet1 = $data.into_packet(id);
 
             let buf = packet1.to_bytes();
-            let packet2 = Packet::from_bytes(buf).unwrap();
+            let header_size = Packet::buf_size();
+            assert_eq!(buf.len() - header_size, $size);
 
+            let packet2 = Packet::from_bytes(buf).unwrap();
             assert_eq!(packet1, packet2)
         }};
     }
@@ -59,7 +61,7 @@ mod tests {
             cap_anim: "animation".parse().unwrap(),
         };
 
-        test_packet!(data)
+        test_packet!(data, 77)
     }
 
     #[test]
@@ -68,7 +70,7 @@ mod tests {
             model: "NutBoy".parse().unwrap(),
         };
 
-        test_packet!(data)
+        test_packet!(data, 0x20)
     }
 
     #[test]
@@ -80,7 +82,7 @@ mod tests {
             sub_scenario: 3,
         };
 
-        test_packet!(data)
+        test_packet!(data, 0x44)
     }
 
     #[test]
@@ -91,7 +93,7 @@ mod tests {
             nickname: "Lulu".parse().unwrap(),
         };
 
-        test_packet!(data)
+        test_packet!(data, 38)
     }
 
     #[test]
@@ -101,7 +103,7 @@ mod tests {
             cap: "MarioKing".parse().unwrap(),
         };
 
-        test_packet!(data)
+        test_packet!(data, 0x20 * 2)
     }
 
     #[test]
@@ -112,14 +114,14 @@ mod tests {
             stage: "MoonKingdom".parse().unwrap(),
         };
 
-        test_packet!(data)
+        test_packet!(data, 66)
     }
 
     #[test]
     fn test_init_packet() {
         let data = InitPacket { max_players: 8 };
 
-        test_packet!(data)
+        test_packet!(data, 2)
     }
 
     #[test]
@@ -136,7 +138,7 @@ mod tests {
             subact: 77,
         };
 
-        test_packet!(data)
+        test_packet!(data, 0x38)
     }
 
     #[test]
@@ -146,6 +148,6 @@ mod tests {
             is_grand: false,
         };
 
-        test_packet!(data)
+        test_packet!(data, 5)
     }
 }
