@@ -118,6 +118,8 @@ impl Server {
                 stale.disconnect().await;
             }
 
+            // TODO: Send peer all game packets
+
             peer.id = connect_packet.id;
             peers.insert(connect_packet.id, peer);
         }
