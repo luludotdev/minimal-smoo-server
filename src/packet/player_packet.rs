@@ -7,6 +7,6 @@ pub struct PlayerPacket {
     pub position: Vec3,
     pub quaternion: Quat,
     pub animation_blend_weights: [f32; 6],
-    pub act: u16,
-    pub subact: u16,
+    pub act: i16,
+    pub subact: i16,
 }
