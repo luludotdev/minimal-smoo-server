@@ -13,18 +13,30 @@ impl Decoder for PacketCodec {
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         if buf.remaining() < Packet::buf_size() {
+            buf.reserve(Packet::buf_size());
+
             return Ok(None);
         }
 
         let partial = PartialPacket::from_bytes(buf)?;
         let body_len = partial.body_length as usize;
 
-        if buf.remaining() < body_len {
-            buf.reserve(body_len);
+        // Catch obviously wrong packets
+        if body_len > 1024 {
+            buf.clear();
+            buf.reserve(Packet::buf_size());
+
             return Ok(None);
         }
 
-        let packet = partial.upgrade(buf)?;
+        if buf.remaining() < body_len {
+            buf.reserve(body_len);
+
+            return Ok(None);
+        }
+
+        let mut body = buf.split_to(body_len);
+        let packet = partial.upgrade(&mut body)?;
         buf.reserve(Packet::buf_size());
 
         Ok(Some(packet))
