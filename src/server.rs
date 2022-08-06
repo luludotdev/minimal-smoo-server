@@ -9,6 +9,7 @@ use futures::stream::{SplitSink, SplitStream};
 use futures::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
+use tokio::time::{self, Duration};
 use tokio_util::codec::Framed;
 use tracing::{debug, error, info};
 use uuid::Uuid;
@@ -357,6 +358,15 @@ impl Server {
         };
 
         Ok(reply)
+    }
+
+    pub async fn sync_moons_loop(self: Arc<Self>) -> Result<()> {
+        loop {
+            let duration = Duration::from_secs(30);
+            time::sleep(duration).await;
+
+            self.sync_moons().await?;
+        }
     }
 
     async fn sync_moons(&self) -> Result<()> {
