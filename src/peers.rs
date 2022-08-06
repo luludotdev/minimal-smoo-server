@@ -14,6 +14,11 @@ pub struct Peers {
 
 impl Peers {
     #[inline]
+    pub fn has(&self, id: &Uuid) -> bool {
+        self.map.contains_key(id)
+    }
+
+    #[inline]
     pub fn get_mut(&mut self, id: &Uuid) -> Result<&mut Peer> {
         self.map
             .get_mut(id)

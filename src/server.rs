@@ -1,4 +1,5 @@
 use std::borrow::ToOwned;
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -408,5 +409,36 @@ impl Server {
         }
 
         Ok(())
+    }
+
+    pub async fn evict_players(self: Arc<Self>) {
+        loop {
+            let duration = Duration::from_secs(5 * 60);
+            time::sleep(duration).await;
+
+            let to_remove = {
+                let peers = self.peers.read().await;
+                let players = self.players.read().await;
+
+                let mut to_remove = HashSet::new();
+                for id in players.all_players().map(|player| player.id) {
+                    if !peers.has(&id) {
+                        to_remove.insert(id);
+                    }
+                }
+
+                to_remove
+            };
+
+            if !to_remove.is_empty() {
+                let count = to_remove.len();
+                debug!(count, "evicting stale players");
+
+                let mut players = self.players.write().await;
+                for id in to_remove {
+                    players.remove(&id);
+                }
+            }
+        }
     }
 }

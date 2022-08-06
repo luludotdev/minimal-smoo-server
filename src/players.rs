@@ -32,6 +32,11 @@ impl Players {
     }
 
     #[inline]
+    pub fn remove(&mut self, id: &Uuid) -> Option<Player> {
+        self.map.remove(id)
+    }
+
+    #[inline]
     pub fn all_players(&self) -> impl Iterator<Item = &Player> + '_ {
         self.map.values()
     }
