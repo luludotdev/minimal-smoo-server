@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::net::SocketAddr;
 
 use futures::SinkExt;
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::packet::{IntoPacket, Packet};
@@ -10,7 +11,7 @@ use crate::server::Sink;
 pub struct Peer {
     pub id: Uuid,
     addr: SocketAddr,
-    sink: Sink,
+    sink: Mutex<Sink>,
 }
 
 impl Peer {
@@ -18,7 +19,7 @@ impl Peer {
         Self {
             id: Uuid::nil(),
             addr,
-            sink,
+            sink: Mutex::new(sink),
         }
     }
 
@@ -28,8 +29,9 @@ impl Peer {
     }
 
     #[inline]
-    pub async fn send(&mut self, packet: Packet) {
-        let _ = self.sink.send(packet).await;
+    pub async fn send(&self, packet: Packet) {
+        let mut sink = self.sink.lock().await;
+        let _ = sink.send(packet).await;
     }
 
     pub async fn send_nil_uuid<T: IntoPacket>(&mut self, packet: T) {
@@ -39,13 +41,16 @@ impl Peer {
             data,
         };
 
-        let _ = self.sink.send(packet).await;
+        let mut sink = self.sink.lock().await;
+        let _ = sink.send(packet).await;
     }
 
     #[inline]
     pub async fn disconnect(&mut self) {
+        let mut sink = self.sink.lock().await;
+
         // TODO: Handle error
-        let _ = self.sink.close().await;
+        let _ = sink.close().await;
     }
 }
 
