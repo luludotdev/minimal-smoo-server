@@ -113,28 +113,6 @@ impl Server {
         }
     }
 
-    pub async fn process_packets(self: Arc<Self>) {
-        while let Ok((id, packet)) = self.process_rx.recv_async().await {
-            let reply = match self.process_packet(id, packet).await {
-                Ok(reply) => reply,
-
-                Err(error) => {
-                    error!(%error);
-                    continue;
-                }
-            };
-
-            match reply {
-                ReplyType::Invalid => break,
-                ReplyType::None => (),
-                ReplyType::Broadcast(packet) => {
-                    let mut peers = self.peers.write().await;
-                    peers.broadcast(packet).await;
-                }
-            }
-        }
-    }
-
     async fn handle_connection(self: Arc<Self>, mut stream: Stream, mut peer: Peer) -> Result<()> {
         let max_players = {
             let config = self.config.read().await;
@@ -232,6 +210,7 @@ impl Server {
             }
         }
 
+        // TODO: Send queue
         while let Some(packet) = stream.next().await {
             let packet = packet?;
             self.process_tx.send((id, packet))?;
@@ -254,6 +233,29 @@ impl Server {
         info!("{player} disconnected");
 
         Ok(())
+    }
+
+    // region: Packet Processing
+    pub async fn process_packets(self: Arc<Self>) {
+        while let Ok((id, packet)) = self.process_rx.recv_async().await {
+            let reply = match self.process_packet(id, packet).await {
+                Ok(reply) => reply,
+
+                Err(error) => {
+                    error!(%error);
+                    continue;
+                }
+            };
+
+            match reply {
+                ReplyType::Invalid => break,
+                ReplyType::None => (),
+                ReplyType::Broadcast(packet) => {
+                    let mut peers = self.peers.write().await;
+                    peers.broadcast(packet).await;
+                }
+            }
+        }
     }
 
     async fn process_packet(&self, id: Uuid, packet: Packet) -> Result<ReplyType> {
@@ -372,7 +374,9 @@ impl Server {
 
         Ok(reply)
     }
+    // endregion
 
+    // region: Moon Syncing
     pub async fn sync_moons_loop(self: Arc<Self>) -> Result<()> {
         loop {
             let duration = Duration::from_secs(30);
@@ -412,6 +416,7 @@ impl Server {
 
         Ok(())
     }
+    // endregion
 
     pub async fn evict_players(self: Arc<Self>) {
         loop {
