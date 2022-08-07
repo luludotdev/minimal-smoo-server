@@ -11,8 +11,8 @@ mod connect_packet;
 mod costume_packet;
 mod game_packet;
 mod init_packet;
+mod moon_packet;
 mod player_packet;
-mod shine_packet;
 
 pub use cap_packet::CapPacket;
 pub use capture_packet::CapturePacket;
@@ -24,8 +24,8 @@ pub use fixed_string::FixedString;
 pub use game_packet::GamePacket;
 pub use header::*;
 pub use init_packet::InitPacket;
+pub use moon_packet::MoonPacket;
 pub use player_packet::PlayerPacket;
-pub use shine_packet::ShinePacket;
 pub use traits::*;
 
 #[cfg(test)]
@@ -143,8 +143,8 @@ mod tests {
     }
 
     #[test]
-    fn test_shine_packet() {
-        let data = ShinePacket {
+    fn test_moon_packet() {
+        let data = MoonPacket {
             id: 69,
             is_grand: false,
         };

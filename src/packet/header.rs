@@ -9,8 +9,8 @@ use super::connect_packet::ConnectPacket;
 use super::costume_packet::CostumePacket;
 use super::game_packet::GamePacket;
 use super::init_packet::InitPacket;
+use super::moon_packet::MoonPacket;
 use super::player_packet::PlayerPacket;
-use super::shine_packet::ShinePacket;
 use super::PacketBytes;
 
 // region: PacketHeader
@@ -99,7 +99,7 @@ impl Packet {
             }
 
             9 => {
-                let packet = ShinePacket::from_bytes(buf)?;
+                let packet = MoonPacket::from_bytes(buf)?;
                 Ok(Packet {
                     id,
                     data: packet.into(),
@@ -189,7 +189,7 @@ pub enum PacketData {
     Connect(ConnectPacket),
     Disconnect,
     Costume(CostumePacket),
-    Shine(ShinePacket),
+    Moon(MoonPacket),
     Capture(CapturePacket),
     ChangeStage(ChangeStagePacket),
 }
@@ -207,7 +207,7 @@ impl PacketData {
             PacketData::Connect(_) => 6,
             PacketData::Disconnect => 7,
             PacketData::Costume(_) => 8,
-            PacketData::Shine(_) => 9,
+            PacketData::Moon(_) => 9,
             PacketData::Capture(_) => 10,
             PacketData::ChangeStage(_) => 11,
         }
@@ -226,7 +226,7 @@ impl PacketBytes for PacketData {
             PacketData::Game(packet) => packet.write_bytes(buf),
             PacketData::Connect(packet) => packet.write_bytes(buf),
             PacketData::Costume(packet) => packet.write_bytes(buf),
-            PacketData::Shine(packet) => packet.write_bytes(buf),
+            PacketData::Moon(packet) => packet.write_bytes(buf),
             PacketData::Capture(packet) => packet.write_bytes(buf),
             PacketData::ChangeStage(packet) => packet.write_bytes(buf),
         }

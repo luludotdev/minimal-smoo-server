@@ -19,8 +19,8 @@ use uuid::Uuid;
 use crate::config::SharedConfig;
 use crate::moons::Moons;
 use crate::packet::{
-    ConnectPacket, ConnectionType, CostumePacket, InitPacket, IntoPacket, Packet, PacketCodec,
-    PacketData, ShinePacket,
+    ConnectPacket, ConnectionType, CostumePacket, InitPacket, IntoPacket, MoonPacket, Packet,
+    PacketCodec, PacketData,
 };
 use crate::peer::Peer;
 use crate::peers::Peers;
@@ -342,7 +342,7 @@ impl Server {
                 ReplyType::Broadcast(outgoing)
             }
 
-            PacketData::Shine(data) => {
+            PacketData::Moon(data) => {
                 // Insert moons
                 {
                     let mut players = self.players.write().await;
@@ -410,7 +410,7 @@ impl Server {
         for (id, is_grand) in diff {
             player.moons.insert(id, is_grand);
 
-            let packet = ShinePacket { id, is_grand };
+            let packet = MoonPacket { id, is_grand };
             peer.send_nil_uuid(packet).await;
         }
 
