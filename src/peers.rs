@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
+use futures::future::join_all;
 use uuid::Uuid;
 
 use crate::packet::Packet;
@@ -50,12 +51,12 @@ impl Peers {
 
     pub async fn broadcast(&mut self, packet: Packet) {
         let sender = packet.id;
-        for (id, peer) in self.map.iter_mut() {
-            if *id == sender {
-                continue;
+        let jobs = self.map.iter_mut().map(|(id, peer)| async move {
+            if *id != sender {
+                peer.send(packet).await;
             }
+        });
 
-            peer.send(packet).await;
-        }
+        join_all(jobs).await;
     }
 }

@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use color_eyre::Result;
 use flume::{Receiver, Sender};
+use futures::future::join_all;
 use futures::stream::{SplitSink, SplitStream};
 use futures::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
@@ -383,10 +384,11 @@ impl Server {
 
     async fn sync_moons(&self) -> Result<()> {
         let mut players = self.players.write().await;
-        for player in players.all_players_mut() {
-            self.sync_player_moons(player).await?;
-        }
+        let jobs = players
+            .all_players_mut()
+            .map(|player| async move { self.sync_player_moons(player).await });
 
+        join_all(jobs).await;
         Ok(())
     }
 
