@@ -1,15 +1,19 @@
 use std::collections::{BTreeMap, HashSet};
 
 use color_eyre::Result;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::config::SharedConfig;
 
 pub type MoonMap = BTreeMap<i32, bool>;
 
-#[derive(Debug)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Moons {
+    #[serde(rename = "moons")]
     map: MoonMap,
+
+    #[serde(skip)]
     config: SharedConfig,
 }
 
@@ -32,7 +36,7 @@ impl Moons {
     // region: Persistence
     pub async fn load(config: SharedConfig) -> Result<Self> {
         let cfg = config.read().await;
-        let map: MoonMap = if !cfg.moons.persist {
+        let mut moons: Self = if !cfg.moons.persist {
             Default::default()
         } else {
             let path = &cfg.moons.persist_file;
@@ -40,12 +44,13 @@ impl Moons {
                 Default::default()
             } else {
                 let body = fs::read(path).await?;
-                serde_json::from_slice(&body)?
+                toml::from_slice(&body)?
             }
         };
 
         drop(cfg);
-        let moons = Self { map, config };
+
+        moons.config = config;
         moons.save().await?;
 
         Ok(moons)
@@ -56,8 +61,8 @@ impl Moons {
         let path = &cfg.moons.persist_file;
 
         if cfg.moons.persist {
-            let json = serde_json::to_string_pretty(&self.map)?;
-            fs::write(path, &json).await?;
+            let body = toml::to_string_pretty(&self)?;
+            fs::write(path, &body).await?;
         }
 
         Ok(())
