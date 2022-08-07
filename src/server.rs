@@ -87,7 +87,7 @@ impl Server {
     }
 
     pub async fn listen(self: Arc<Self>) -> Result<()> {
-        info!(addr = %self.addr, "Server listening");
+        info!("Server listening on {}", self.addr);
         let listener = TcpListener::bind(self.addr).await?;
 
         loop {
