@@ -257,18 +257,29 @@ impl Server {
     // region: Packet Processing
     pub async fn process_packets(self: Arc<Self>) {
         while let Ok((id, packet)) = self.process_rx.recv_async().await {
+            let server = self.clone();
+            let disconnect = || async move {
+                let mut peers = server.peers.write().await;
+                if let Ok(peer) = peers.get_mut(&id) {
+                    peer.disconnect().await;
+                }
+            };
+
             let reply = match self.process_packet(id, packet).await {
                 Ok(reply) => reply,
 
                 Err(error) => {
-                    error!(%error);
+                    error!(%id, packet = ?packet.data, "error occurred while processing packet");
+                    eprintln!("{:?}", error);
+
+                    disconnect().await;
                     continue;
                 }
             };
 
             match reply {
-                ReplyType::Invalid => break,
                 ReplyType::None => (),
+                ReplyType::Invalid => disconnect().await,
                 ReplyType::Broadcast(packet) => {
                     let mut peers = self.peers.write().await;
                     peers.broadcast(packet).await;
