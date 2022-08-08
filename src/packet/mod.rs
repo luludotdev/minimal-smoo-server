@@ -62,7 +62,7 @@ mod tests {
             cap_anim: "animation".parse().unwrap(),
         };
 
-        test_packet!(data, 77)
+        test_packet!(data, 77);
     }
 
     #[test]
@@ -71,7 +71,7 @@ mod tests {
             model: "NutBoy".parse().unwrap(),
         };
 
-        test_packet!(data, 0x20)
+        test_packet!(data, 0x20);
     }
 
     #[test]
@@ -83,7 +83,7 @@ mod tests {
             sub_scenario: 3,
         };
 
-        test_packet!(data, 0x44)
+        test_packet!(data, 0x44);
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod tests {
             nickname: "Lulu".parse().unwrap(),
         };
 
-        test_packet!(data, 38)
+        test_packet!(data, 38);
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod tests {
             cap: "MarioKing".parse().unwrap(),
         };
 
-        test_packet!(data, 0x20 * 2)
+        test_packet!(data, 0x20 * 2);
     }
 
     #[test]
@@ -115,14 +115,14 @@ mod tests {
             stage: "MoonKingdom".parse().unwrap(),
         };
 
-        test_packet!(data, 66)
+        test_packet!(data, 66);
     }
 
     #[test]
     fn test_init_packet() {
         let data = InitPacket { max_players: 8 };
 
-        test_packet!(data, 2)
+        test_packet!(data, 2);
     }
 
     #[test]
@@ -139,7 +139,7 @@ mod tests {
             subact: 77,
         };
 
-        test_packet!(data, 0x38)
+        test_packet!(data, 0x38);
     }
 
     #[test]
@@ -149,6 +149,6 @@ mod tests {
             is_grand: false,
         };
 
-        test_packet!(data, 5)
+        test_packet!(data, 5);
     }
 }

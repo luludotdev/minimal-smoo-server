@@ -26,6 +26,7 @@
     clippy::implicit_clone,
     clippy::unused_async,
     clippy::redundant_closure_for_method_calls,
+    clippy::default_trait_access,
     rust_2018_idioms,
     future_incompatible,
     nonstandard_style,

@@ -35,14 +35,11 @@ impl Config {
         }
 
         let bytes = fs::read(&path).await.context("failed to read config")?;
-        let result = toml::from_slice::<Config>(&bytes);
-
-        match result {
-            Ok(config) => Ok(config),
-            Err(_) => {
-                let config = Self::load_default().await?;
-                Ok(config)
-            }
+        if let Ok(config) = toml::from_slice::<Config>(&bytes) {
+            Ok(config)
+        } else {
+            let config = Self::load_default().await?;
+            Ok(config)
         }
     }
 
@@ -83,8 +80,8 @@ impl Default for ServerConfig {
     #[inline]
     fn default() -> Self {
         Self {
-            host: Default::default(),
-            port: Default::default(),
+            host: None,
+            port: None,
             max_players: NonZeroU8::new(8).unwrap(),
         }
     }
@@ -138,7 +135,7 @@ impl Default for CostumesConfig {
     fn default() -> Self {
         Self {
             banned_costumes: HashSet::from(["MarioInvisible".to_owned()]),
-            allowed_players: Default::default(),
+            allowed_players: HashSet::default(),
         }
     }
 }

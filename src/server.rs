@@ -76,8 +76,8 @@ impl Server {
         let server = Self {
             addr,
             config,
-            peers: Default::default(),
-            players: Default::default(),
+            peers: RwLock::default(),
+            players: RwLock::default(),
             moons: RwLock::new(moons),
 
             process_tx: p_tx,
@@ -344,17 +344,17 @@ impl Server {
                     (is_allowed, is_cap_banned, is_body_banned)
                 };
 
-                let cap = match (is_cap_banned, is_allowed) {
-                    (true, false) => fallback,
-                    _ => cap.parse()?,
-                };
-
                 let body = match (is_body_banned, is_allowed) {
                     (true, false) => fallback,
                     _ => body.parse()?,
                 };
 
-                let outgoing = CostumePacket { cap, body };
+                let cap = match (is_cap_banned, is_allowed) {
+                    (true, false) => fallback,
+                    _ => cap.parse()?,
+                };
+
+                let outgoing = CostumePacket { body, cap };
                 let outgoing = outgoing.into_packet(packet.id);
 
                 self.sync_moons().await?;

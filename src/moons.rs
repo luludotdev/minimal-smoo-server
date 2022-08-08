@@ -35,20 +35,20 @@ impl Moons {
 
     // region: Persistence
     pub async fn load(config: SharedConfig) -> Result<Self> {
-        let cfg = config.read().await;
-        let mut moons: Self = if !cfg.moons.persist {
-            Default::default()
-        } else {
-            let path = &cfg.moons.persist_file;
-            if !cfg.moons.persist_file.exists() {
-                Default::default()
+        let mut moons: Self = {
+            let cfg = config.read().await;
+            if cfg.moons.persist {
+                let path = &cfg.moons.persist_file;
+                if cfg.moons.persist_file.exists() {
+                    let body = fs::read(path).await?;
+                    toml::from_slice(&body)?
+                } else {
+                    Moons::default()
+                }
             } else {
-                let body = fs::read(path).await?;
-                toml::from_slice(&body)?
+                Moons::default()
             }
         };
-
-        drop(cfg);
 
         moons.config = config;
         moons.save().await?;
