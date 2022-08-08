@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeSet;
 
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
@@ -6,7 +6,7 @@ use tokio::fs;
 
 use crate::config::SharedConfig;
 
-pub type MoonMap = BTreeMap<i32, bool>;
+pub type MoonMap = BTreeSet<i32>;
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Moons {
@@ -18,34 +18,25 @@ pub struct Moons {
 }
 
 impl Moons {
-    pub async fn insert(&mut self, id: i32, is_grand: bool) -> Result<()> {
-        self.map.insert(id, is_grand);
+    pub async fn insert(&mut self, id: i32) -> Result<()> {
+        self.map.insert(id);
         self.save().await
     }
 
+    #[inline]
     pub fn difference(&self, other: &MoonMap) -> MoonMap {
-        let keys = self.map.keys().collect::<HashSet<_>>();
-        let other_keys = other.keys().collect::<HashSet<_>>();
-
-        keys.difference(&other_keys)
-            .map(|key| (**key, *self.map.get(key).unwrap()))
-            .collect()
+        self.map.difference(other).copied().collect()
     }
 
     // region: Persistence
     pub async fn load(config: SharedConfig) -> Result<Self> {
-        let mut moons = {
+        let mut moons: Self = {
             let cfg = config.read().await;
             if cfg.moons.persist {
                 let path = &cfg.moons.persist_file;
                 if cfg.moons.persist_file.exists() {
                     let body = fs::read(path).await?;
-                    let map: MoonMap = serde_json::from_slice(&body)?;
-
-                    Self {
-                        map,
-                        config: SharedConfig::default(),
-                    }
+                    toml::from_slice(&body)?
                 } else {
                     Moons::default()
                 }
@@ -65,7 +56,7 @@ impl Moons {
         let path = &cfg.moons.persist_file;
 
         if cfg.moons.persist {
-            let body = serde_json::to_string_pretty(&self.map)?;
+            let body = toml::to_string_pretty(&self)?;
             fs::write(path, &body).await?;
         }
 

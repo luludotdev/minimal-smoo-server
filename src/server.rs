@@ -380,11 +380,11 @@ impl Server {
 
                     if player.loaded {
                         let mut moons = self.moons.write().await;
-                        moons.insert(data.id, data.is_grand).await?;
+                        moons.insert(data.id).await?;
 
                         if player.moons.get(&data.id).is_none() {
                             info!("{player} collected moon {}", data.id);
-                            player.moons.insert(data.id, data.is_grand);
+                            player.moons.insert(data.id);
                         }
                     }
                 }
@@ -437,10 +437,14 @@ impl Server {
         let mut peers = self.peers.write().await;
         let peer = peers.get_mut(&player.id)?;
 
-        for (id, is_grand) in diff {
-            player.moons.insert(id, is_grand);
+        for id in diff {
+            player.moons.insert(id);
 
-            let packet = MoonPacket { id, is_grand };
+            let packet = MoonPacket {
+                id,
+                is_grand: false,
+            };
+
             peer.send_nil_uuid(packet).await;
         }
 

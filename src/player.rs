@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fmt::Display;
 
 use color_eyre::{Report, Result};
@@ -33,7 +32,7 @@ impl Player {
             costume: None,
             is_2d: false,
 
-            moons: BTreeMap::default(),
+            moons: MoonMap::default(),
             last_pos: None,
             last_game: None,
         }

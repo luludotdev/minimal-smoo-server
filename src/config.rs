@@ -117,7 +117,7 @@ impl Default for MoonConfig {
     fn default() -> Self {
         Self {
             persist: true,
-            persist_file: PathBuf::from("./moons.json"),
+            persist_file: PathBuf::from("./moons.toml"),
         }
     }
 }
