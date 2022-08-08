@@ -71,7 +71,7 @@ pub struct Args {
     #[clap(short, long, parse(from_occurrences))]
     verbose: u8,
 
-    /// Server bind host [default: 127.0.0.1]
+    /// Server bind host [default: 0.0.0.0]
     #[clap(short, long)]
     host: Option<IpAddr>,
 

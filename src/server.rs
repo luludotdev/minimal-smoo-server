@@ -65,7 +65,7 @@ impl Server {
             let host = args
                 .host
                 .or_else(|| config.server.host())
-                .unwrap_or_else(|| "127.0.0.1".parse().unwrap());
+                .unwrap_or_else(|| "0.0.0.0".parse().unwrap());
 
             SocketAddr::from((host, port))
         };
