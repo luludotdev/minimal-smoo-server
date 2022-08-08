@@ -300,7 +300,6 @@ impl Server {
                     info!("{player} -> {}/{}", data.stage, data.scenario);
                 }
 
-                player.is_2d = data.is_2d;
                 player.last_game = Some(*data);
 
                 // Send the position of all players when a player join a stage
@@ -336,7 +335,6 @@ impl Server {
                     let mut players = self.players.write().await;
                     let player = players.get_mut(&id)?;
 
-                    player.loaded = true;
                     player.set_costume(*data)?;
                 }
 
@@ -377,14 +375,12 @@ impl Server {
                     let mut players = self.players.write().await;
                     let player = players.get_mut(&id)?;
 
-                    if player.loaded {
-                        let mut moons = self.moons.write().await;
-                        moons.insert(data.id).await?;
+                    let mut moons = self.moons.write().await;
+                    moons.insert(data.id).await?;
 
-                        if player.moons.get(&data.id).is_none() {
-                            info!("{player} collected moon {}", data.id);
-                            player.moons.insert(data.id);
-                        }
+                    if player.moons.get(&data.id).is_none() {
+                        info!("{player} collected moon {}", data.id);
+                        player.moons.insert(data.id);
                     }
                 }
 

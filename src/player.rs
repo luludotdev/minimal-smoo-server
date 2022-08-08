@@ -12,11 +12,9 @@ pub struct Player {
     pub id: Uuid,
     pub name: String,
 
-    pub loaded: bool,
     pub costume: Option<Costume>,
-    pub is_2d: bool,
-
     pub moons: MoonMap,
+
     pub last_pos: Option<PlayerPacket>,
     pub last_game: Option<GamePacket>,
 }
@@ -28,11 +26,9 @@ impl Player {
             id,
             name,
 
-            loaded: false,
             costume: None,
-            is_2d: false,
-
             moons: MoonMap::default(),
+
             last_pos: None,
             last_game: None,
         }
