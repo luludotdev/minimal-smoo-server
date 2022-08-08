@@ -105,7 +105,7 @@ impl Server {
                 let peer = Peer::new(sink, addr);
 
                 if let Err(error) = server.handle_connection(stream, peer).await {
-                    error!(%error);
+                    error!(%addr, %error, "connection closed with error");
                 }
 
                 debug!(?addr, "closed");
@@ -184,48 +184,56 @@ impl Server {
             peers.insert(id, peer);
         }
 
-        // Insert player into server state
-        {
-            let mut players = self.players.write().await;
-            match players.get(&connect_packet.id).ok() {
-                Some(player) => {
-                    // Reconnect
-                    info!("{player} reconnected");
-                }
+        // Capture errors instead of returning
+        let server = self.clone();
+        let run = || async move {
+            // Insert player into server state
+            {
+                let mut players = server.players.write().await;
+                match players.get(&connect_packet.id).ok() {
+                    Some(player) => {
+                        // Reconnect
+                        info!("{player} reconnected");
+                    }
 
-                None => {
-                    // First connect
-                    let name = connect_data.nickname.try_to_string()?;
-                    let player = Player::new(connect_packet.id, name);
+                    None => {
+                        // First connect
+                        let name = connect_data.nickname.try_to_string()?;
+                        let player = Player::new(connect_packet.id, name);
 
-                    info!("{player} connected");
-                    let _ = players.insert(id, player);
+                        info!("{player} connected");
+                        let _ = players.insert(id, player);
+                    }
                 }
             }
-        }
 
-        // Broadcast connect and costume packets to other clients in the background
-        {
-            let mut peers = self.peers.write().await;
-            peers.broadcast(connect_packet).await;
+            // Broadcast connect and costume packets to other clients in the background
+            {
+                let mut peers = server.peers.write().await;
+                peers.broadcast(connect_packet).await;
 
-            let players = self.players.read().await;
-            let player = players.get(&connect_packet.id)?;
+                let players = server.players.read().await;
+                let player = players.get(&connect_packet.id)?;
 
-            if let Some(costume) = &player.costume {
-                let costume_packet: CostumePacket = costume.clone().try_into()?;
-                let costume_packet = costume_packet.into_packet(connect_packet.id);
+                if let Some(costume) = &player.costume {
+                    let costume_packet: CostumePacket = costume.clone().try_into()?;
+                    let costume_packet = costume_packet.into_packet(connect_packet.id);
 
-                peers.broadcast(costume_packet).await;
+                    peers.broadcast(costume_packet).await;
+                }
             }
-        }
 
-        // TODO: Send queue
-        while let Some(packet) = stream.next().await {
-            let packet = packet?;
-            self.process_tx.send((id, packet))?;
-        }
+            // TODO: Send queue
+            while let Some(packet) = stream.next().await {
+                let packet = packet?;
+                server.process_tx.send((id, packet))?;
+            }
 
+            Ok(())
+        };
+
+        // Bubble up errors and always run disconnect logic
+        let result = run().await;
         let disconnect_packet = Packet {
             id,
             data: PacketData::Disconnect,
@@ -239,10 +247,11 @@ impl Server {
         }
 
         let players = self.players.read().await;
-        let player = players.get(&id)?;
-        info!("{player} disconnected");
+        if let Ok(player) = players.get(&id) {
+            info!("{player} disconnected");
+        };
 
-        Ok(())
+        result
     }
 
     // region: Packet Processing
