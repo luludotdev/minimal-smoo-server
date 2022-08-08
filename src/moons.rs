@@ -18,7 +18,6 @@ pub struct Moons {
 }
 
 impl Moons {
-    #[inline]
     pub async fn insert(&mut self, id: i32, is_grand: bool) -> Result<()> {
         self.map.insert(id, is_grand);
         self.save().await

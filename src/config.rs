@@ -61,7 +61,7 @@ impl Config {
         Ok(())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn shared(self) -> SharedConfig {
         Arc::new(RwLock::new(self))
     }

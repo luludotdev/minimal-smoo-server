@@ -45,7 +45,6 @@ impl Peer {
 }
 
 impl Debug for Peer {
-    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Peer").field("addr", &self.addr).finish()
     }

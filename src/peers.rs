@@ -41,7 +41,6 @@ impl Peers {
         self.map.insert(id, peer)
     }
 
-    #[inline]
     pub async fn remove(&mut self, id: &Uuid) -> Option<Peer> {
         let peer = self.map.remove(id);
         match peer {

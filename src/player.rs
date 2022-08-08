@@ -39,7 +39,6 @@ impl Player {
         }
     }
 
-    #[inline]
     pub fn stage(&self) -> Option<&str> {
         self.last_game
             .as_ref()
@@ -81,7 +80,6 @@ impl Default for Costume {
 impl TryFrom<CostumePacket> for Costume {
     type Error = Report;
 
-    #[inline]
     fn try_from(packet: CostumePacket) -> Result<Self, Self::Error> {
         let body = packet.body.try_into()?;
         let cap = packet.body.try_into()?;
@@ -93,7 +91,6 @@ impl TryFrom<CostumePacket> for Costume {
 impl TryFrom<Costume> for CostumePacket {
     type Error = Report;
 
-    #[inline]
     fn try_from(costume: Costume) -> Result<Self, Self::Error> {
         let body = costume.body.parse()?;
         let cap = costume.body.parse()?;
