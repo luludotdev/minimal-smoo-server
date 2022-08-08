@@ -34,13 +34,18 @@ impl Moons {
 
     // region: Persistence
     pub async fn load(config: SharedConfig) -> Result<Self> {
-        let mut moons: Self = {
+        let mut moons = {
             let cfg = config.read().await;
             if cfg.moons.persist {
                 let path = &cfg.moons.persist_file;
                 if cfg.moons.persist_file.exists() {
                     let body = fs::read(path).await?;
-                    toml::from_slice(&body)?
+                    let map: MoonMap = serde_json::from_slice(&body)?;
+
+                    Self {
+                        map,
+                        config: SharedConfig::default(),
+                    }
                 } else {
                     Moons::default()
                 }
@@ -60,7 +65,7 @@ impl Moons {
         let path = &cfg.moons.persist_file;
 
         if cfg.moons.persist {
-            let body = toml::to_string_pretty(&self)?;
+            let body = serde_json::to_string_pretty(&self.map)?;
             fs::write(path, &body).await?;
         }
 
