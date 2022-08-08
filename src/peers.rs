@@ -3,10 +3,12 @@ use std::collections::HashMap;
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use futures::future::join_all;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use crate::packet::Packet;
 use crate::peer::Peer;
+use crate::players::Players;
 
 #[derive(Debug, Default)]
 pub struct Peers {
@@ -14,11 +16,6 @@ pub struct Peers {
 }
 
 impl Peers {
-    #[inline]
-    pub fn has(&self, id: &Uuid) -> bool {
-        self.map.contains_key(id)
-    }
-
     #[inline]
     pub fn count(&self) -> usize {
         self.map.len()
@@ -41,16 +38,21 @@ impl Peers {
         self.map.insert(id, peer)
     }
 
-    pub async fn remove(&mut self, id: &Uuid) -> Option<Peer> {
+    pub async fn remove(&mut self, id: &Uuid, players: &RwLock<Players>) -> Option<Peer> {
         let peer = self.map.remove(id);
-        match peer {
+        let peer = match peer {
             Some(mut peer) => {
                 peer.disconnect().await;
                 Some(peer)
             }
 
             None => peer,
-        }
+        };
+
+        let mut players = players.write().await;
+        players.remove(id);
+
+        peer
     }
 
     pub async fn broadcast(&mut self, packet: Packet) {

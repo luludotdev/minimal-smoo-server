@@ -114,14 +114,8 @@ async fn main() -> Result<()> {
     let listen_handle = tokio::spawn(server.clone().listen());
     let process_handle = tokio::spawn(server.clone().process_packets());
     let moon_sync_handle = tokio::spawn(server.clone().sync_moons_loop());
-    let evict_handle = tokio::spawn(server.evict_players());
 
-    let _ = futures::join!(
-        listen_handle,
-        process_handle,
-        moon_sync_handle,
-        evict_handle
-    );
+    let _ = futures::join!(listen_handle, process_handle, moon_sync_handle);
 
     Ok(())
 }
