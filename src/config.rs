@@ -76,8 +76,7 @@ impl Config {
 pub struct ServerConfig {
     host: Option<IpAddr>,
     port: Option<u16>,
-
-    pub max_players: NonZeroU8,
+    max_players: NonZeroU8,
 }
 
 impl Default for ServerConfig {
@@ -100,6 +99,11 @@ impl ServerConfig {
     #[inline]
     pub fn port(&self) -> Option<u16> {
         self.port
+    }
+
+    #[inline]
+    pub fn max_players_(&self) -> u16 {
+        u16::from(self.max_players.get())
     }
 }
 // endregion

@@ -20,6 +20,11 @@ impl Peers {
     }
 
     #[inline]
+    pub fn count(&self) -> usize {
+        self.map.len()
+    }
+
+    #[inline]
     pub fn get_mut(&mut self, id: &Uuid) -> Result<&mut Peer> {
         self.map
             .get_mut(id)

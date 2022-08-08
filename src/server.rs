@@ -116,7 +116,7 @@ impl Server {
     async fn handle_connection(self: Arc<Self>, mut stream: Stream, mut peer: Peer) -> Result<()> {
         let max_players = {
             let config = self.config.read().await;
-            u16::from(config.server.max_players.get())
+            config.server.max_players_()
         };
 
         let init = InitPacket { max_players };
@@ -136,7 +136,17 @@ impl Server {
             }
         };
 
-        // TODO: Max players check
+        // Max players check
+        {
+            let peers = self.peers.read().await;
+
+            let player_count = peers.count();
+            let max_players = max_players as usize;
+
+            if player_count >= max_players {
+                return Ok(());
+            }
+        }
 
         // Send state of existing players
         {
