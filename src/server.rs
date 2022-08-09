@@ -1,4 +1,5 @@
 use std::borrow::ToOwned;
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -113,9 +114,20 @@ impl Server {
     }
 
     async fn handle_connection(self: Arc<Self>, mut stream: Stream, mut peer: Peer) -> Result<()> {
-        let max_players = {
+        let (max_players, banned_ids) = {
             let config = self.config.read().await;
-            config.server.max_players_()
+            let max_players = config.server.max_players();
+
+            let mut banned_ids = if config.bans.enabled {
+                config.bans.banned_ids.clone()
+            } else {
+                HashSet::new()
+            };
+
+            // Always ban the nil UUID
+            banned_ids.insert(Uuid::nil());
+
+            (max_players, banned_ids)
         };
 
         let init = InitPacket { max_players };
@@ -134,6 +146,11 @@ impl Server {
                 return Ok(());
             }
         };
+
+        // Banned players check
+        if banned_ids.contains(&id) {
+            return Ok(());
+        }
 
         // Max players check
         {

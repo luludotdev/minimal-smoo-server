@@ -17,8 +17,9 @@ pub type SharedConfig = Arc<RwLock<Config>>;
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Config {
     pub server: ServerConfig,
+    pub bans: BanConfig,
     pub moons: MoonConfig,
-    pub costumes: CostumesConfig,
+    pub costumes: CostumeConfig,
 }
 
 impl Config {
@@ -99,8 +100,26 @@ impl ServerConfig {
     }
 
     #[inline]
-    pub fn max_players_(&self) -> u16 {
+    pub fn max_players(&self) -> u16 {
         u16::from(self.max_players.get())
+    }
+}
+// endregion
+
+// region: BanConfig
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BanConfig {
+    pub enabled: bool,
+    pub banned_ids: HashSet<Uuid>,
+}
+
+impl Default for BanConfig {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            banned_ids: HashSet::new(),
+        }
     }
 }
 // endregion
@@ -125,12 +144,12 @@ impl Default for MoonConfig {
 
 // region: CostumesConfig
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CostumesConfig {
+pub struct CostumeConfig {
     pub banned_costumes: HashSet<String>,
     pub allowed_players: HashSet<Uuid>,
 }
 
-impl Default for CostumesConfig {
+impl Default for CostumeConfig {
     #[inline]
     fn default() -> Self {
         Self {
@@ -140,7 +159,7 @@ impl Default for CostumesConfig {
     }
 }
 
-impl CostumesConfig {
+impl CostumeConfig {
     #[inline]
     pub fn is_banned(&self, costume: &str) -> bool {
         self.banned_costumes.contains(costume)
