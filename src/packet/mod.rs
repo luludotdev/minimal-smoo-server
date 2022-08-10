@@ -13,6 +13,7 @@ mod game_packet;
 mod init_packet;
 mod moon_packet;
 mod player_packet;
+mod tag_packet;
 
 pub use cap_packet::CapPacket;
 pub use capture_packet::CapturePacket;
@@ -26,6 +27,7 @@ pub use header::*;
 pub use init_packet::InitPacket;
 pub use moon_packet::MoonPacket;
 pub use player_packet::PlayerPacket;
+pub use tag_packet::TagPacket;
 pub use traits::*;
 
 #[cfg(test)]

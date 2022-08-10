@@ -11,6 +11,7 @@ use super::game_packet::GamePacket;
 use super::init_packet::InitPacket;
 use super::moon_packet::MoonPacket;
 use super::player_packet::PlayerPacket;
+use super::tag_packet::TagPacket;
 use super::PacketBytes;
 
 // region: PacketHeader
@@ -72,10 +73,13 @@ impl Packet {
                 })
             }
 
-            5 => Ok(Packet {
-                id,
-                data: PacketData::Tag,
-            }),
+            5 => {
+                let packet = TagPacket::from_bytes(buf)?;
+                Ok(Packet {
+                    id,
+                    data: packet.into(),
+                })
+            }
 
             6 => {
                 let packet = ConnectPacket::from_bytes(buf)?;
@@ -185,7 +189,7 @@ pub enum PacketData {
     Player(PlayerPacket),
     Cap(CapPacket),
     Game(GamePacket),
-    Tag,
+    Tag(TagPacket),
     Connect(ConnectPacket),
     Disconnect,
     Costume(CostumePacket),
@@ -203,7 +207,7 @@ impl PacketData {
             PacketData::Player(_) => 2,
             PacketData::Cap(_) => 3,
             PacketData::Game(_) => 4,
-            PacketData::Tag => 5,
+            PacketData::Tag(_) => 5,
             PacketData::Connect(_) => 6,
             PacketData::Disconnect => 7,
             PacketData::Costume(_) => 8,
@@ -218,12 +222,13 @@ impl PacketBytes for PacketData {
     fn write_bytes(&self, buf: &mut BytesMut) -> usize {
         match self {
             // Do nothing
-            PacketData::Unknown | PacketData::Tag | PacketData::Disconnect => 0,
+            PacketData::Unknown | PacketData::Disconnect => 0,
 
             PacketData::Init(packet) => packet.write_bytes(buf),
             PacketData::Player(packet) => packet.write_bytes(buf),
             PacketData::Cap(packet) => packet.write_bytes(buf),
             PacketData::Game(packet) => packet.write_bytes(buf),
+            PacketData::Tag(packet) => packet.write_bytes(buf),
             PacketData::Connect(packet) => packet.write_bytes(buf),
             PacketData::Costume(packet) => packet.write_bytes(buf),
             PacketData::Moon(packet) => packet.write_bytes(buf),
