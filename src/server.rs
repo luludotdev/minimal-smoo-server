@@ -408,6 +408,7 @@ impl Server {
             // Broadcast as-is
             PacketData::Player(_)
             | PacketData::Cap(_)
+            | PacketData::Tag
             | PacketData::Capture(_)
             | PacketData::ChangeStage(_) => ReplyType::Broadcast(packet),
 
