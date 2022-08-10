@@ -40,7 +40,6 @@ impl Peer {
     #[inline]
     pub async fn disconnect(&mut self) {
         // TODO: Handle error
-        // TODO: Investigate socket not closing
         let _ = self.sink.close().await;
     }
 }

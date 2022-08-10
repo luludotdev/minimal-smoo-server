@@ -276,9 +276,7 @@ impl Server {
             let server = self.clone();
             let disconnect = || async move {
                 let mut peers = server.peers.write().await;
-                if let Ok(peer) = peers.get_mut(&id) {
-                    peer.disconnect().await;
-                }
+                let _ = peers.remove(&id, &server.players).await;
             };
 
             let reply = match self.process_packet(id, packet).await {
