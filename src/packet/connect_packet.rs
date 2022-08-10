@@ -22,13 +22,11 @@ pub enum ConnectionType {
 }
 
 impl PacketBytes for ConnectionType {
-    #[inline]
     fn write_bytes(&self, buf: &mut bytes::BytesMut) -> usize {
         let u32 = *self as u32;
         u32.write_bytes(buf)
     }
 
-    #[inline]
     fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let id = u32::from_bytes(buf)?;
         match id {

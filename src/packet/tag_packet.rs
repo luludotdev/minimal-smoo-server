@@ -22,13 +22,11 @@ pub enum UpdateType {
 }
 
 impl PacketBytes for UpdateType {
-    #[inline]
     fn write_bytes(&self, buf: &mut bytes::BytesMut) -> usize {
         let u8 = *self as u8;
         u8.write_bytes(buf)
     }
 
-    #[inline]
     fn from_bytes<T: Buf>(buf: &mut T) -> Result<Self> {
         let id = u8::from_bytes(buf)?;
         match id {
