@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Jack Baron <jackmbaron@gmail.com>"]
 description = "Minimal Super Mario Odyssey Online Server"
 edition = "2021"
-rust-version = "1.62"
+rust-version = "1.63"
 
 [dependencies]
 bytes = "1.2.1"
