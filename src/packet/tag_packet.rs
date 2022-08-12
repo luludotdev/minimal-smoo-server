@@ -1,6 +1,6 @@
 use smoo_derive::Packet;
 
-#[derive(Debug, Clone, Copy, PartialEq, Packet)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Packet)]
 #[packet("Tag")]
 pub struct TagPacket {
     update_bits: u8,
