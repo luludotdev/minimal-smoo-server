@@ -11,6 +11,35 @@ pub(super) async fn handle_command(command: Command, server: Arc<Server>) -> Res
     match command {
         Command::Exit => Ok(HandleResult::Exit),
 
+        Command::LoadConfig => {
+            // TODO
+            bail!("not yet implemented")
+        }
+
+        Command::List => {
+            // TODO
+            bail!("not yet implemented")
+        }
+
+        Command::Send {
+            stage,
+            scenario,
+            warp_id,
+            players,
+        } => {
+            // TODO
+            bail!("not yet implemented")
+        }
+
+        Command::SendAll {
+            stage,
+            scenario,
+            warp_id,
+        } => {
+            // TODO
+            bail!("not yet implemented")
+        }
+
         Command::Moon(MoonCommand::List) => {
             // TODO
             bail!("not yet implemented")
@@ -23,13 +52,10 @@ pub(super) async fn handle_command(command: Command, server: Arc<Server>) -> Res
             Ok(HandleResult::Ok)
         }
 
-        Command::Moon(MoonCommand::Send { id, player }) => {
+        Command::Moon(MoonCommand::Give { id, players }) => {
             // TODO
             bail!("not yet implemented")
         }
-
-        // TODO
-        _ => Ok(HandleResult::Ok),
     }
 }
 
