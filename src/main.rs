@@ -37,7 +37,9 @@ use std::net::IpAddr;
 
 use clap::Parser;
 use color_eyre::Result;
+use console::writer::{self, ThreadWriter};
 use once_cell::sync::Lazy;
+use rustyline::Editor;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, EnvFilter};
@@ -46,6 +48,7 @@ use crate::config::Config;
 use crate::server::Server;
 
 mod config;
+mod console;
 mod moons;
 mod packet;
 mod peer;
@@ -85,6 +88,10 @@ async fn main() -> Result<()> {
     color_eyre::install()?;
     let args = Args::parse();
 
+    let mut rl = Editor::<()>::new()?;
+    let printer = rl.create_external_printer()?;
+    let (writer, rx) = ThreadWriter::new();
+
     let pkg_name = env!("TRACING_FMT");
     let filter = match args.verbose {
         #[cfg(debug_assertions)]
@@ -100,7 +107,9 @@ async fn main() -> Result<()> {
     };
 
     let filter = EnvFilter::new(filter);
-    let fmt = fmt::layer().with_target(args.verbose >= 2);
+    let fmt = fmt::layer()
+        .with_target(args.verbose >= 2)
+        .with_writer(writer);
 
     tracing_subscriber::registry()
         .with(filter)
@@ -114,8 +123,14 @@ async fn main() -> Result<()> {
     let listen_handle = tokio::spawn(server.clone().listen());
     let process_handle = tokio::spawn(server.clone().process_packets());
     let moon_sync_handle = tokio::spawn(server.clone().sync_moons_loop());
+    let writer_handle = tokio::spawn(writer::write_loop(printer, rx));
 
-    let _ = futures::join!(listen_handle, process_handle, moon_sync_handle);
+    let _ = futures::join!(
+        listen_handle,
+        process_handle,
+        moon_sync_handle,
+        writer_handle
+    );
 
     Ok(())
 }
