@@ -29,7 +29,7 @@ pub async fn read_loop<H: Helper>(mut rl: Editor<H>, server: Arc<Server>) -> Res
 
                     Err(error) => {
                         error!("An error occurred while processing that command");
-                        error!("{}", error);
+                        error!(?error);
 
                         continue;
                     }
