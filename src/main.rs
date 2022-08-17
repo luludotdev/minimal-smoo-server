@@ -37,6 +37,7 @@ use std::net::IpAddr;
 
 use clap::Parser;
 use color_eyre::Result;
+use console::reader;
 use console::writer::{self, ThreadWriter};
 use once_cell::sync::Lazy;
 use rustyline::Editor;
@@ -123,12 +124,14 @@ async fn main() -> Result<()> {
     let listen_handle = tokio::spawn(server.clone().listen());
     let process_handle = tokio::spawn(server.clone().process_packets());
     let moon_sync_handle = tokio::spawn(server.clone().sync_moons_loop());
+    let reader_handle = tokio::spawn(reader::read_loop(rl));
     let writer_handle = tokio::spawn(writer::write_loop(printer, rx));
 
     let _ = futures::join!(
         listen_handle,
         process_handle,
         moon_sync_handle,
+        reader_handle,
         writer_handle
     );
 
