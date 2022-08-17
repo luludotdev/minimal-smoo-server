@@ -38,8 +38,9 @@ impl Write for ThreadWriter {
     }
 }
 
+#[allow(clippy::unused_async)]
 pub async fn write_loop(mut printer: impl ExternalPrinter, rx: Receiver<String>) -> Result<()> {
-    while let Ok(msg) = rx.recv_async().await {
+    while let Ok(msg) = rx.recv() {
         printer.print(msg)?;
     }
 
