@@ -95,9 +95,7 @@ impl Server {
             let server = self.clone();
             let (stream, addr) = listener.accept().await?;
 
-            // TODO: Handle error
-            let _ = stream.set_nodelay(true);
-
+            stream.set_nodelay(true)?;
             debug!(?addr, "accepted");
 
             tokio::spawn(async move {
@@ -433,7 +431,9 @@ impl Server {
             .all_players_mut()
             .map(|player| async move { self.sync_player_moons(player).await });
 
-        join_all(jobs).await;
+        let results = join_all(jobs).await;
+        let _ = results.into_iter().collect::<Result<Vec<_>, _>>()?;
+
         Ok(())
     }
 
