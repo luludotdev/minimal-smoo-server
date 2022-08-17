@@ -378,7 +378,7 @@ impl Server {
                 let outgoing = CostumePacket { body, cap };
                 let outgoing = outgoing.into_packet(packet.id);
 
-                self.sync_moons().await?;
+                self.sync_moons_inner().await?;
                 ReplyType::Broadcast(outgoing)
             }
 
@@ -397,7 +397,7 @@ impl Server {
                     }
                 }
 
-                self.sync_moons().await?;
+                self.sync_moons_inner().await?;
                 ReplyType::Broadcast(packet)
             }
 
@@ -421,11 +421,15 @@ impl Server {
             let duration = Duration::from_secs(30);
             time::sleep(duration).await;
 
-            self.sync_moons().await?;
+            self.sync_moons_inner().await?;
         }
     }
 
-    async fn sync_moons(&self) -> Result<()> {
+    pub async fn sync_moons(self: Arc<Self>) -> Result<()> {
+        self.sync_moons_inner().await
+    }
+
+    async fn sync_moons_inner(&self) -> Result<()> {
         let mut players = self.players.write().await;
         let jobs = players
             .all_players_mut()
