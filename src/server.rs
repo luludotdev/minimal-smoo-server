@@ -261,11 +261,6 @@ impl Server {
             peers.broadcast(disconnect_packet).await;
         }
 
-        let players = self.players.read().await;
-        if let Ok(player) = players.get(&id) {
-            info!("{player} disconnected");
-        };
-
         result
     }
 

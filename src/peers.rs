@@ -4,6 +4,7 @@ use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use futures::future::join_all;
 use tokio::sync::RwLock;
+use tracing::info;
 use uuid::Uuid;
 
 use crate::packet::Packet;
@@ -50,7 +51,9 @@ impl Peers {
         };
 
         let mut players = players.write().await;
-        players.remove(id);
+        if let Some(player) = players.remove(id) {
+            info!("{player} disconnected");
+        };
 
         peer
     }
