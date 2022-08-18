@@ -35,8 +35,10 @@ pub async fn read_loop<H: Helper>(
                     Ok(HandleResult::Exit) => break,
 
                     Err(error) => {
-                        error!("An error occurred while processing that command");
-                        error!(?error);
+                        error!(
+                            "An error occurred while processing that command\n{:?}",
+                            error
+                        );
 
                         continue;
                     }
