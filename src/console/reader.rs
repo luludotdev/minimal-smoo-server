@@ -14,6 +14,8 @@ pub async fn read_loop<H: Helper>(mut rl: Editor<H>, server: Arc<Server>) -> Res
     loop {
         match rl.readline("> ") {
             Ok(line) => {
+                rl.add_history_entry(&line);
+
                 let args = line.split(' ');
                 let command = match Command::try_parse_from(args) {
                     Ok(command) => command,
