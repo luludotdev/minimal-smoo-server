@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use color_eyre::eyre::bail;
 use color_eyre::Result;
-use tracing::info;
+use tracing::{info, warn};
 
 use super::commands::{Command, ConfigCommand, MoonCommand};
 use crate::config::SharedConfig;
@@ -47,6 +47,12 @@ pub(super) async fn handle_command(
             warp_id,
             players,
         } => {
+            let resolved = server.resolve_players(players).await;
+            if resolved.is_empty() {
+                warn!("No players selected! (Use * to select all players)");
+                return Ok(HandleResult::Ok);
+            }
+
             // TODO
             bail!("not yet implemented")
         }
@@ -67,12 +73,18 @@ pub(super) async fn handle_command(
 
         Command::Moon(MoonCommand::Sync) => {
             server.sync_moons().await?;
-            info!("Synced moons to all players");
+            info!("Synced current moon state to all players");
 
             Ok(HandleResult::Ok)
         }
 
         Command::Moon(MoonCommand::Give { id, players }) => {
+            let resolved = server.resolve_players(players).await;
+            if resolved.is_empty() {
+                warn!("No players selected! (Use * to select all players)");
+                return Ok(HandleResult::Ok);
+            }
+
             // TODO
             bail!("not yet implemented")
         }

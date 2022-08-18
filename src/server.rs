@@ -2,6 +2,7 @@ use std::borrow::ToOwned;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::net::SocketAddr;
+use std::string::ToString;
 use std::sync::Arc;
 
 use color_eyre::Result;
@@ -272,6 +273,29 @@ impl Server {
     pub async fn list_players(self: Arc<Self>) -> HashSet<String> {
         let all_players = self.players.read().await;
         all_players.all_players().map(ToString::to_string).collect()
+    }
+
+    pub async fn resolve_players(self: Arc<Self>, mut players: Vec<String>) -> HashSet<Uuid> {
+        let is_all = players.contains(&"*".to_owned());
+        for player in players.iter_mut() {
+            *player = player.to_lowercase();
+        }
+
+        let all_players = self.players.read().await;
+        all_players
+            .all_players()
+            .filter(|player| {
+                if is_all {
+                    return true;
+                }
+
+                let uuid = player.id.to_string().to_lowercase();
+                let name = player.name.to_lowercase();
+
+                players.contains(&uuid) || players.contains(&name)
+            })
+            .map(|player| player.id)
+            .collect()
     }
     // endregion
 
