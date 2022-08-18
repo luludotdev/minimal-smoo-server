@@ -268,6 +268,13 @@ impl Server {
         result
     }
 
+    // region: Player Info
+    pub async fn list_players(self: Arc<Self>) -> HashSet<String> {
+        let all_players = self.players.read().await;
+        all_players.all_players().map(ToString::to_string).collect()
+    }
+    // endregion
+
     // region: Packet Processing
     pub async fn process_packets(self: Arc<Self>) {
         while let Ok((id, packet)) = self.process_rx.recv_async().await {

@@ -35,8 +35,10 @@ pub(super) async fn handle_command(
         }
 
         Command::List => {
-            // TODO
-            bail!("not yet implemented")
+            let players = server.list_players().await;
+            info!(?players);
+
+            Ok(HandleResult::Ok)
         }
 
         Command::Send {
