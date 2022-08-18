@@ -124,7 +124,7 @@ async fn main() -> Result<()> {
     let listen_handle = tokio::spawn(server.clone().listen());
     let process_handle = tokio::spawn(server.clone().process_packets());
     let moon_sync_handle = tokio::spawn(server.clone().sync_moons_loop());
-    let reader_handle = tokio::spawn(reader::read_loop(rl, server));
+    let reader_handle = tokio::spawn(reader::read_loop(rl, server, config));
     let writer_handle = tokio::spawn(writer::write_loop(printer, rx));
 
     let _ = futures::join!(

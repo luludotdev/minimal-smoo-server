@@ -9,9 +9,8 @@ use super::Stage;
     no_binary_name = true
 )]
 pub enum Command {
-    /// Reload condfiguration from disk
-    #[clap(alias = "loadconfig")]
-    LoadConfig,
+    #[clap(subcommand)]
+    Config(ConfigCommand),
 
     /// List all currently connected players
     List,
@@ -41,6 +40,15 @@ pub enum Command {
     /// Stop the server and exit
     #[clap(alias = "quit", alias = "stop", alias = "q")]
     Exit,
+}
+
+#[derive(Debug, Parser)]
+pub enum ConfigCommand {
+    /// Reload config from file
+    Reload,
+
+    /// Force save current config to disk
+    Save,
 }
 
 #[derive(Debug, Parser)]

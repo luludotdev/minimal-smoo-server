@@ -4,16 +4,34 @@ use color_eyre::eyre::bail;
 use color_eyre::Result;
 use tracing::info;
 
-use super::commands::{Command, MoonCommand};
+use super::commands::{Command, ConfigCommand, MoonCommand};
+use crate::config::SharedConfig;
 use crate::server::Server;
 
-pub(super) async fn handle_command(command: Command, server: Arc<Server>) -> Result<HandleResult> {
+pub(super) async fn handle_command(
+    command: Command,
+    server: Arc<Server>,
+    config: SharedConfig,
+) -> Result<HandleResult> {
     match command {
         Command::Exit => Ok(HandleResult::Exit),
 
-        Command::LoadConfig => {
-            // TODO
-            bail!("not yet implemented")
+        Command::Config(ConfigCommand::Reload) => {
+            let mut config = config.write().await;
+
+            config.reload().await?;
+            info!("Loaded config from file");
+
+            Ok(HandleResult::Ok)
+        }
+
+        Command::Config(ConfigCommand::Save) => {
+            let config = config.read().await;
+
+            config.save().await?;
+            info!("Force saved config to file");
+
+            Ok(HandleResult::Ok)
         }
 
         Command::List => {

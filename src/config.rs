@@ -51,6 +51,13 @@ impl Config {
         Ok(config)
     }
 
+    pub async fn reload(&mut self) -> Result<()> {
+        let config = Self::load().await?;
+        *self = config;
+
+        Ok(())
+    }
+
     pub async fn save(&self) -> Result<()> {
         let path = Self::path_buf();
         let serialized = toml::to_string_pretty(&self)?;

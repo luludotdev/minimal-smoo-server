@@ -8,9 +8,14 @@ use tracing::error;
 
 use super::commands::Command;
 use super::handler::{handle_command, HandleResult};
+use crate::config::SharedConfig;
 use crate::server::Server;
 
-pub async fn read_loop<H: Helper>(mut rl: Editor<H>, server: Arc<Server>) -> Result<()> {
+pub async fn read_loop<H: Helper>(
+    mut rl: Editor<H>,
+    server: Arc<Server>,
+    config: SharedConfig,
+) -> Result<()> {
     loop {
         match rl.readline("> ") {
             Ok(line) => {
@@ -25,7 +30,7 @@ pub async fn read_loop<H: Helper>(mut rl: Editor<H>, server: Arc<Server>) -> Res
                     }
                 };
 
-                match handle_command(command, server.clone()).await {
+                match handle_command(command, server.clone(), config.clone()).await {
                     Ok(HandleResult::Ok) => (),
                     Ok(HandleResult::Exit) => break,
 
