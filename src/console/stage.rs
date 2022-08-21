@@ -4,6 +4,8 @@ use std::str::FromStr;
 use color_eyre::eyre::bail;
 use color_eyre::Report;
 
+use crate::packet::FixedString;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Stage {
     Mushroom,
@@ -70,6 +72,12 @@ impl Stage {
             Self::DarkSide => "Special1WorldHomeStage",
             Self::DarkerSide => "Special2WorldHomeStag",
         }
+    }
+
+    #[inline]
+    pub fn stage_name_fixed(&self) -> FixedString<0x30> {
+        let stage = self.stage_name();
+        stage.parse().unwrap()
     }
 }
 

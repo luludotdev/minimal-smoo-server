@@ -3,9 +3,11 @@ use std::sync::Arc;
 use color_eyre::eyre::bail;
 use color_eyre::Result;
 use tracing::{info, warn};
+use uuid::Uuid;
 
 use super::commands::{Command, ConfigCommand, MoonCommand};
 use crate::config::SharedConfig;
+use crate::packet::{ChangeStagePacket, IntoPacket};
 use crate::server::Server;
 
 pub(super) async fn handle_command(
@@ -53,8 +55,17 @@ pub(super) async fn handle_command(
                 return Ok(HandleResult::Ok);
             }
 
-            // TODO
-            bail!("not yet implemented")
+            let packet = ChangeStagePacket {
+                stage: stage.stage_name_fixed(),
+                id: warp_id.parse()?,
+                scenario,
+                sub_scenario: 0,
+            };
+
+            let packet = packet.into_packet(Uuid::nil());
+            server.broadcast_some(packet, resolved).await?;
+
+            Ok(HandleResult::Ok)
         }
 
         Command::SendAll {
@@ -62,8 +73,17 @@ pub(super) async fn handle_command(
             scenario,
             warp_id,
         } => {
-            // TODO
-            bail!("not yet implemented")
+            let packet = ChangeStagePacket {
+                stage: stage.stage_name_fixed(),
+                id: warp_id.parse()?,
+                scenario,
+                sub_scenario: 0,
+            };
+
+            let packet = packet.into_packet(Uuid::nil());
+            server.broadcast(packet).await?;
+
+            Ok(HandleResult::Ok)
         }
 
         Command::Moon(MoonCommand::List) => {

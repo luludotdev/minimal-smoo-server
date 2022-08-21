@@ -285,12 +285,12 @@ impl Server {
     // endregion
 
     // region: Player Info
-    pub async fn list_players(self: Arc<Self>) -> HashSet<String> {
+    pub async fn list_players(self: &Arc<Self>) -> HashSet<String> {
         let all_players = self.players.read().await;
         all_players.all_players().map(ToString::to_string).collect()
     }
 
-    pub async fn resolve_players(self: Arc<Self>, mut players: Vec<String>) -> HashSet<Uuid> {
+    pub async fn resolve_players(self: &Arc<Self>, mut players: Vec<String>) -> HashSet<Uuid> {
         let is_all = players.contains(&"*".to_owned());
         for player in players.iter_mut() {
             *player = player.to_lowercase();
@@ -471,7 +471,7 @@ impl Server {
         }
     }
 
-    pub async fn reload_moons(self: Arc<Self>) -> Result<()> {
+    pub async fn reload_moons(self: &Arc<Self>) -> Result<()> {
         let mut moons = self.moons.write().await;
         moons.reload().await?;
 
