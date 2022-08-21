@@ -78,13 +78,24 @@ pub(super) async fn handle_command(
             Ok(HandleResult::Ok)
         }
 
-        Command::Moon(MoonCommand::Give { id, players }) => {
-            let resolved = server.resolve_players(players).await;
-            if resolved.is_empty() {
-                warn!("No players selected! (Use * to select all players)");
+        Command::Moon(MoonCommand::Reload) => {
+            let persist_moons = {
+                let config = config.read().await;
+                config.moons.persist
+            };
+
+            if !persist_moons {
+                warn!("Moon persistence is disabled!");
                 return Ok(HandleResult::Ok);
             }
 
+            server.reload_moons().await?;
+            info!("Reloaded moons from file");
+
+            Ok(HandleResult::Ok)
+        }
+
+        Command::Moon(MoonCommand::Add { id }) => {
             // TODO
             bail!("not yet implemented")
         }

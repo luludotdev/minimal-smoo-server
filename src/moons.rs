@@ -51,6 +51,13 @@ impl Moons {
         Ok(moons)
     }
 
+    pub async fn reload(&mut self) -> Result<()> {
+        let moons = Self::load(self.config.clone()).await?;
+        *self = moons;
+
+        Ok(())
+    }
+
     async fn save(&self) -> Result<()> {
         let cfg = self.config.read().await;
         let path = &cfg.moons.persist_file;

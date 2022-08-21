@@ -451,6 +451,13 @@ impl Server {
         }
     }
 
+    pub async fn reload_moons(self: Arc<Self>) -> Result<()> {
+        let mut moons = self.moons.write().await;
+        moons.reload().await?;
+
+        self.sync_moons_inner().await
+    }
+
     pub async fn sync_moons(self: Arc<Self>) -> Result<()> {
         self.sync_moons_inner().await
     }

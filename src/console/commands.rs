@@ -59,6 +59,9 @@ pub enum MoonCommand {
     /// Sync moons to all connected players
     Sync,
 
-    /// Give a specific moon to a player or all players
-    Give { id: i32, players: Vec<String> },
+    /// Reload moons from moon file (if persistence is enabled)
+    Reload,
+
+    /// Manually add a specific moon to
+    Add { id: i32 },
 }
