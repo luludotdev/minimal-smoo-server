@@ -264,6 +264,26 @@ impl Server {
         result
     }
 
+    // region: Packet Sending
+    pub async fn broadcast(self: &Arc<Self>, packet: Packet) -> Result<()> {
+        let mut peers = self.peers.write().await;
+        peers.broadcast(packet).await;
+
+        Ok(())
+    }
+
+    pub async fn broadcast_some(
+        self: &Arc<Self>,
+        packet: Packet,
+        players: HashSet<Uuid>,
+    ) -> Result<()> {
+        let mut peers = self.peers.write().await;
+        peers.broadcast_some(packet, players).await;
+
+        Ok(())
+    }
+    // endregion
+
     // region: Player Info
     pub async fn list_players(self: Arc<Self>) -> HashSet<String> {
         let all_players = self.players.read().await;

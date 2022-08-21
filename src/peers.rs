@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use color_eyre::eyre::eyre;
 use color_eyre::Result;
@@ -60,11 +60,27 @@ impl Peers {
 
     pub async fn broadcast(&mut self, packet: Packet) {
         let sender = packet.id;
-        let jobs = self.map.iter_mut().map(|(id, peer)| async move {
-            if *id != sender {
+        let jobs =
+            self.map
+                .iter_mut()
+                .filter(|(id, _)| **id != sender)
+                .map(|(_, peer)| async move {
+                    peer.send(packet).await;
+                });
+
+        join_all(jobs).await;
+    }
+
+    pub async fn broadcast_some(&mut self, packet: Packet, players: HashSet<Uuid>) {
+        let sender = packet.id;
+        let jobs = self
+            .map
+            .iter_mut()
+            .filter(|(id, _)| **id != sender)
+            .filter(|(id, _)| players.contains(id))
+            .map(|(_, peer)| async move {
                 peer.send(packet).await;
-            }
-        });
+            });
 
         join_all(jobs).await;
     }
