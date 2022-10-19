@@ -478,6 +478,10 @@ impl Server {
         self.sync_moons_inner().await
     }
 
+    pub async fn give_moon(self: &Arc<Self>, moon: i32) -> Result<()> {
+        todo!()
+    }
+
     pub async fn sync_moons(self: Arc<Self>) -> Result<()> {
         self.sync_moons_inner().await
     }
