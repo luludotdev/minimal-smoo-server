@@ -62,6 +62,10 @@ pub enum MoonCommand {
     /// Reload moons from moon file (if persistence is enabled)
     Reload,
 
+    Clear,
+
     /// Manually add a specific moon to
-    Add { id: i32 },
+    Add {
+        id: i32,
+    },
 }

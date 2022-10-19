@@ -478,6 +478,13 @@ impl Server {
         self.sync_moons_inner().await
     }
 
+    pub async fn clear_moons(self: &Arc<Self>) -> Result<()> {
+        let mut moons = self.moons.write().await;
+        moons.clear().await?;
+
+        self.sync_moons_inner().await
+    }
+
     pub async fn give_moon(self: &Arc<Self>, moon: i32) -> Result<()> {
         todo!()
     }

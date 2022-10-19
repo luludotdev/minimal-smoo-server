@@ -115,6 +115,22 @@ pub(super) async fn handle_command(
             Ok(HandleResult::Ok)
         }
 
+        Command::Moon(MoonCommand::Clear) => {
+            let persist_moons = {
+                let config = config.read().await;
+                config.moons.persist
+            };
+
+            if !persist_moons {
+                warn!("Moon persistence is disabled, only clearing moons in-memory.");
+            }
+
+            server.clear_moons().await?;
+            info!("Cleared moons");
+
+            Ok(HandleResult::Ok)
+        }
+
         Command::Moon(MoonCommand::Add { id }) => {
             // TODO
             bail!("not yet implemented")

@@ -28,6 +28,12 @@ impl Moons {
         self.map.difference(other).copied().collect()
     }
 
+    #[inline]
+    pub async fn clear(&mut self) -> Result<()> {
+        self.map.clear();
+        self.save().await
+    }
+
     // region: Persistence
     pub async fn load(config: SharedConfig) -> Result<Self> {
         let mut moons: Self = {

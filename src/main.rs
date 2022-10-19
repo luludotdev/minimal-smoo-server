@@ -77,7 +77,7 @@ pub struct Args {
     verbose: u8,
 
     /// Server bind host [default: 0.0.0.0]
-    #[clap(short, long)]
+    #[clap(short = 'H', long)]
     host: Option<IpAddr>,
 
     /// Server bind host [default: 1027]
