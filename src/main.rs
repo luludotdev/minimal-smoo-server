@@ -35,7 +35,7 @@
 
 use std::net::IpAddr;
 
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use color_eyre::Result;
 use console::reader;
 use console::writer::{self, ThreadWriter};
@@ -72,7 +72,8 @@ static VERSION: Lazy<String> = Lazy::new(|| {
 #[clap(version = &VERSION[..], about)]
 pub struct Args {
     /// Verbosity level
-    #[clap(short, long, parse(from_occurrences))]
+    #[arg(short, long)]
+    #[clap(action = ArgAction::Count)]
     verbose: u8,
 
     /// Server bind host [default: 0.0.0.0]

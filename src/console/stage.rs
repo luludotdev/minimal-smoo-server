@@ -6,7 +6,7 @@ use color_eyre::Report;
 
 use crate::packet::FixedString;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stage {
     Mushroom,
     Cap,
