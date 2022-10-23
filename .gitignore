@@ -3,3 +3,5 @@
 config.toml
 moons.json
 moons.toml
+
+!.cargo/config.toml
